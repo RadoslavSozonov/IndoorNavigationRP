@@ -28,7 +28,7 @@ public class LabelWindow extends Activity {
         // Get layout components
         TextView label = (TextView) findViewById(R.id.label_of_room);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
-        Button button_start = (Button) findViewById(R.id.button_start);
+        Button button_start = (Button) findViewById(R.id.button_submit);
 
         // Start labeling callback
         button_start.setOnClickListener(new View.OnClickListener() {
@@ -40,10 +40,7 @@ public class LabelWindow extends Activity {
                     sent_label.setText(label_text);
                     // Disable back button while labeling
                     training = true;
-
                     // TODO: chirp and receive 500 echos, then send them to server
-
-
 
                     training = false;
                 }

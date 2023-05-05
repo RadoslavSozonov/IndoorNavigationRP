@@ -2,7 +2,6 @@ package com.example.myapplication;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -10,11 +9,11 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class Pop extends Activity {
+public class RecognizeWindow extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.popupwindow);
+        setContentView(R.layout.popup_recognize);
 
         // Get layout components
         TextView popup_title = (TextView) findViewById(R.id.popup_title);
