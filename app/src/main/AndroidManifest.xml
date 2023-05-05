@@ -21,6 +21,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".Pop"
+            android:theme="@style/Theme.PopUp"></activity>
+        <activity android:name=".LabelWindow"
+            android:theme="@style/Theme.PopUpStuck"></activity>
     </application>
 
 </manifest>
