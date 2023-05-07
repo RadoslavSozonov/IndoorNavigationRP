@@ -4,11 +4,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,8 +24,11 @@ public class MainActivity extends AppCompatActivity {
         TextView list_of_rooms = (TextView) findViewById(R.id.list_of_rooms);
 
 
-        // TODO: show all rooms in the database
-        list_of_rooms.setText("room1 \nroom2");
+
+        String rooms = "";
+        list_of_rooms.setText(rooms);
+        new Thread(new GetRoomsExecutor(rooms, this)).start();
+
 
 
         // Popup for recognizing the current room
@@ -74,5 +77,9 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    public TextView getRoomList() {
+        return (TextView) findViewById(R.id.list_of_rooms);
     }
 }
