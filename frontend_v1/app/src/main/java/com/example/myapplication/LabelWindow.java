@@ -23,10 +23,19 @@ import androidx.core.content.ContextCompat;
 import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
 import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -51,6 +60,7 @@ public class LabelWindow extends Activity {
         TextView label = (TextView) findViewById(R.id.label_of_room);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
+        TextView progress = (TextView) findViewById(R.id.textView4);
 
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
         if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP){
@@ -89,7 +99,7 @@ public class LabelWindow extends Activity {
                     int freq1 = 21500;
                     int freq2 = 22000;
                     float duration = 0.002f;
-                    int repeatChirp = 101;
+                    int repeatChirp = 501;
                     EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
 //                    chirpStackOFVersion.playSoundOnce();
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
@@ -99,6 +109,7 @@ public class LabelWindow extends Activity {
                     Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     List<short[]> listOfRecords = new ArrayList<>();
                     TimerTask task = new TimerTask() {
+                        int count = 0;
                         @Override
                         public void run() {
 //                            System.out.println(captureAcousticEcho.buffer);
@@ -106,6 +117,8 @@ public class LabelWindow extends Activity {
                             captureAcousticEcho.stopCapture();
                             captureAcousticEcho.startCapture();
                             chirpStackOFVersion.playSoundOnce();
+                            count++;
+                            progress.setText(String.valueOf(count));
 
                         }
                     };
@@ -132,6 +145,8 @@ public class LabelWindow extends Activity {
 //                    for(short[] array: listOfRecords){
 //                        System.out.println(array);
 //                    }
+
+
                     training = false;
                 }
             }
@@ -202,10 +217,45 @@ public class LabelWindow extends Activity {
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100*0.1*2*repeats) // sampleRate*duration*2*repeats
+                (int) (44100*0.1*2*100) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;
+    }
+
+    private void buildAndSendRequest(List<short[]> listOfRecords) throws IOException {
+        URL url = new URL("http://example.com/add_training_data");
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod("POST");
+
+        Map<String, List<short[]>> parameters = new HashMap<>();
+        parameters.put("listOfRecords", listOfRecords);
+
+        con.setDoOutput(true);
+        DataOutputStream out = new DataOutputStream(con.getOutputStream());
+        out.writeBytes(getParamsString(parameters));
+        out.flush();
+        out.close();
+
+        con.setRequestProperty("Content-Type", "application/json");
+        InputStream inputStream = con.getInputStream();
+    }
+
+    public static String getParamsString(Map<String, List<short[]>> params)
+            throws UnsupportedEncodingException {
+        StringBuilder result = new StringBuilder();
+
+        for (Map.Entry<String, List<short[]>> entry : params.entrySet()) {
+            result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(entry.getValue().toString(), "UTF-8"));
+            result.append("&");
+        }
+
+        String resultString = result.toString();
+        return resultString.length() > 0
+                ? resultString.substring(0, resultString.length() - 1)
+                : resultString;
     }
 }
 
