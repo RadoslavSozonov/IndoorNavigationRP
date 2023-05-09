@@ -1,19 +1,32 @@
 package com.example.myapplication;
 
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
 import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -39,6 +52,29 @@ public class LabelWindow extends Activity {
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
 
+        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+        if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP){
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                    PackageManager.PERMISSION_GRANTED) {
+
+                // Should we show an explanation?
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.RECORD_AUDIO)) {
+
+                    // Show an expanation to the user *asynchronously* -- don't block
+                    // this thread waiting for the user's response! After the user
+                    // sees the explanation, try again to request the permission.
+
+                } else {
+
+                    // No explanation needed, we can request the permission.
+
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
+                }
+            }
+        }
+
         // Start labeling callback
         button_start.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,35 +86,131 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
                     // TODO: chirp and receive 500 echos, then send them to server
-                    int freq1 = 19500;
-                    int freq2 = 20500;
+                    int freq1 = 21500;
+                    int freq2 = 22000;
                     float duration = 0.002f;
-                    int repeatChirp = 50;
+                    int repeatChirp = 101;
                     EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
 //                    chirpStackOFVersion.playSoundOnce();
+                    AudioRecord audioRecord = createAudioRecord(repeatChirp);
+                    System.out.println(audioRecord.getState());
+                    CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
+//                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
+                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
+                    List<short[]> listOfRecords = new ArrayList<>();
                     TimerTask task = new TimerTask() {
                         @Override
                         public void run() {
+//                            System.out.println(captureAcousticEcho.buffer);
+                            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
+                            captureAcousticEcho.stopCapture();
+                            captureAcousticEcho.startCapture();
                             chirpStackOFVersion.playSoundOnce();
+
                         }
                     };
 
                     Timer timer = new Timer("Timer");
+                    threadCapture.start();
 
+                    audioRecord.startRecording();
                     timer.scheduleAtFixedRate(task, 0L, 100L);
 
                     try {
                         Thread.sleep(100L*repeatChirp);
                         timer.cancel();
+                        audioRecord.stop();
+                        audioRecord.release();
+                        captureAcousticEcho.stopThread();
+
+                        audioRecord = null;
+
+
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-
+//                    for(short[] array: listOfRecords){
+//                        System.out.println(array);
+//                    }
                     training = false;
                 }
             }
+        });
 
-            public void playCodeFromChatGPT4(int freq1, int freq2, float duration) {
+        // Setup pop up layout
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        getWindow().setLayout((int) (width * 0.8), (int) (height * 0.8));
+
+        WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
+        layoutParams.dimAmount = 0.35f;
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+        getWindow().setAttributes(layoutParams);
+
+
+        // Make a back button
+        Button button_back = (Button) findViewById(R.id.button_back);
+        button_back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(!training) {
+                    finish();
+                }
+            }
+        });
+    }
+
+    private AudioRecord createAudioRecord(int repeats) {
+        int bufferSize = AudioRecord.getMinBufferSize(
+                44100,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+        );
+
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.RECORD_AUDIO)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.RECORD_AUDIO},
+                        1);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
+        AudioRecord audioRecord = new AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                44100,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                (int) (44100*0.1*2*repeats) // sampleRate*duration*2*repeats
+        );
+//        System.out.println(audioRecord.getBufferSizeInFrames());
+        return audioRecord;
+    }
+}
+
+/*
+public void playCodeFromChatGPT4(int freq1, int freq2, float duration) {
                 int SAMPLE_RATE = 44100; // Hz
                 int CHIRP_FREQ_START = freq1; // Hz
                 int CHIRP_FREQ_END = freq2; // Hz
@@ -119,37 +251,4 @@ public class LabelWindow extends Activity {
                 audioTrack.play();
                 System.out.println("Sound played Chat");
             }
-
-
-        });
-
-
-
-
-        // Setup pop up layout
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        int width = displayMetrics.widthPixels;
-        int height = displayMetrics.heightPixels;
-
-        getWindow().setLayout((int) (width * 0.8), (int) (height * 0.8));
-
-        WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
-        layoutParams.dimAmount = 0.35f;
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        getWindow().setAttributes(layoutParams);
-
-
-        // Make a back button
-        Button button_back = (Button) findViewById(R.id.button_back);
-        button_back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(!training) {
-                    finish();
-                }
-            }
-        });
-    }
-}
+ */

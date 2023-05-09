@@ -17,18 +17,18 @@ public class EmitChirpStackOFVersion {
         this.freq2=freq2;
 
         int sampleRate=44100;
-        int numSample= (int) (duration*sampleRate);
+        int numSample= (int) (this.duration*sampleRate);
         double sample[]=new double[numSample];
         byte[] generatedSnd= new byte[2*numSample];
         double instfreq=0, numerator;
 //        float c = (this.freq2 - this.freq1)/this.duration;
-        System.out.println(numSample);
+//        System.out.println(numSample);
         for (int i=0;i<numSample; i++ ) {
             numerator=(double)(i)/(double)numSample; // t
-            instfreq=freq1+(numerator*(this.freq2-this.freq1));
+            instfreq=freq1+(numerator*(this.freq2-this.freq1)); //ft
             sample[i]=Math.sin(2*Math.PI*i/(sampleRate/instfreq));
 //            sample[i] = Math.sin(2*Math.PI*(freq1 + ((freq2-freq1)*numerator)/duration));
-            System.out.println(sample[i]);
+//            System.out.println(sample[i]);
         }
 
         int idx = 0;
@@ -64,20 +64,21 @@ public class EmitChirpStackOFVersion {
         }
     }
 
-    public void playSoundMultipleTimes(int times){
-        try {
-            System.out.println("Start");
-            for(int i = 0; i < times; i++){
-                playSoundOnce();
-            }
-
-            System.out.println("Sound played Git");
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
-    }
+//    public void playSoundMultipleTimes(int times){
+//        try {
+//            System.out.println("Start");
+//            for(int i = 0; i < times; i++){
+//                playSoundOnce();
+//            }
+//
+//            System.out.println("Sound played Git");
+//        } catch (Exception e){
+//            System.out.println(e.toString());
+//        }
+//    }
 
     public void playSoundOnce(){
+
         this.audioTrack.play();
         this.audioTrack.stop();
         this.audioTrack.reloadStaticData();
