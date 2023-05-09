@@ -28,13 +28,22 @@ def get_rooms():
 def add_room():
 
     if request.method == 'POST':
-        audio = request.files['audio']
-        room = Room(audio)
-        room_uuid = uuid4()
-        UNSAVED_ROOMS.update({room_uuid: room})
+        #audio = request.files['audio']
+        #room = Room(audio)
+        #room_uuid = uuid4()
+        #UNSAVED_ROOMS.update({room_uuid: room})
+        room_data = request.json
+        room_audio = room_data['audio']
+        data = {
+            #u'building': building_label,
+            #u'room': room_label,
+            'audio': room_audio
+            #u'uuid':room_uuid
+        }
+        db.collection("tests").document("testt").set(data)
 
-
-        return room_uuid
+        return 'OK'
+        #return room_uuid
 
     if request.method == 'GET':
         room_data = request.json

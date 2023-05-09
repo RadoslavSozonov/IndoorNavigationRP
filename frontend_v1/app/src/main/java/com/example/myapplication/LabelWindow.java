@@ -132,6 +132,9 @@ public class LabelWindow extends Activity {
 //                    for(short[] array: listOfRecords){
 //                        System.out.println(array);
 //                    }
+                    new Thread(() -> {
+                        ServerCommunication.addRoom(listOfRecords);
+                    }).start();
                     training = false;
                 }
             }

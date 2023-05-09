@@ -1,11 +1,15 @@
 package com.example.myapplication;
 
+import com.google.gson.Gson;
+
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 
 public class ServerCommunication {
@@ -13,7 +17,7 @@ public class ServerCommunication {
         URL url = null;
 
         try {
-            url = new URL("http://192.168.2.17:5000/get_rooms");
+            url = new URL("http://192.168.50.77:5000/get_rooms");
         } catch (MalformedURLException e) {
             return "";
         }
@@ -31,13 +35,40 @@ public class ServerCommunication {
                     response.append(inputLine);
                 }
                 in.close();
-
                 return response.toString();
             } else return "Server returned response: " + status_code;
         } catch (IOException e) {
             e.printStackTrace();
             return "Server error";
         }
+    }
+
+    public static void addRoom(List<short[]> audiolist) {
+        URL url = null;
+
+        try {
+            url = new URL("http://192.168.50.77:5000/add_room");
+        } catch (MalformedURLException e) {
+            return;
+        }
+
+        try {
+            String body = "{\"audio\": " + new Gson().toJson(audiolist) + "}";
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            connection.getOutputStream();
+            DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+            out.writeBytes(body);
+            connection.getResponseCode();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+
     }
 
 }
