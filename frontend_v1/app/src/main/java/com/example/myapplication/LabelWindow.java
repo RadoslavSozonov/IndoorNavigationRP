@@ -53,7 +53,7 @@ import java.util.stream.Stream;
 
 public class LabelWindow extends Activity {
 
-    private final int CHIRP_FREQUENCY = 5000;
+    private final int CHIRP_FREQUENCY = 19500;
 
     // Back is disabled during labelling
     boolean training = false;
@@ -113,7 +113,7 @@ public class LabelWindow extends Activity {
                     int freq1 = 21500;
                     int freq2 = 22000;
                     float duration = 0.002f;
-                    int repeatChirp = 5;
+                    int repeatChirp = 50;
 //                  
                     ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
                   

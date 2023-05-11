@@ -21,7 +21,7 @@ public class ChirpEmitterBisccitAttempt {
                 AudioTrack.MODE_STATIC
         );
 
-        double duration = 1.0;
+        double duration = 0.002;
         double amplitude = 1.0; // between -1.0 and 1.0
         int numSamples = (int)(duration * sampleRate);
 
@@ -38,7 +38,9 @@ public class ChirpEmitterBisccitAttempt {
     }
 
     public void playOnce() {
-        audioTrack.play();
+        this.audioTrack.play();
+        this.audioTrack.stop();
+        this.audioTrack.reloadStaticData();
     }
 
     public void destroy() {
