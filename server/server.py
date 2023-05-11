@@ -45,11 +45,15 @@ def add_room():
         data = {
             u'building': building_label,
             u'room': room_label,
-            #'audio': room_audio
+            u'audio': "Currently stored locally",
             u'uuid':doc_ref.id
         }
-        #write("test.wav", 44100, room_audio.astype(np.int16))
-        doc_ref.set(data)
+        filename = doc_ref.id + ".wav"
+        concatenatedAudio = sum(room_audio, [])
+        arr = np.asarray(concatenatedAudio)
+        print(arr)
+        write(filename, 44100, arr.astype(np.int16))
+
 
         return 'OK'
         #return room_uuid
