@@ -9,6 +9,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -16,28 +17,37 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-
+import org.json.JSONArray;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+
 import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
 import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
+import com.example.myapplication.RequestCallbacks.MyUrlRequestCallback;
+import com.google.android.gms.net.CronetProviderInstaller;
 
-import java.io.DataOutputStream;
+import org.chromium.net.CronetEngine;
+import org.chromium.net.UploadDataProvider;
+import org.chromium.net.UploadDataProviders;
+import org.chromium.net.UrlRequest;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class LabelWindow extends Activity {
@@ -99,7 +109,7 @@ public class LabelWindow extends Activity {
                     int freq1 = 21500;
                     int freq2 = 22000;
                     float duration = 0.002f;
-                    int repeatChirp = 501;
+                    int repeatChirp = 5;
                     EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
 //                    chirpStackOFVersion.playSoundOnce();
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
@@ -117,8 +127,8 @@ public class LabelWindow extends Activity {
                             captureAcousticEcho.stopCapture();
                             captureAcousticEcho.startCapture();
                             chirpStackOFVersion.playSoundOnce();
-                            count++;
-                            progress.setText(String.valueOf(count));
+//                            count++;
+//                            progress.setText(String.valueOf(count));
 
                         }
                     };
@@ -138,8 +148,16 @@ public class LabelWindow extends Activity {
 
                         audioRecord = null;
 
+                        buildAndSendRequest(
+                                "room1",
+                                listOfRecords
+                                        .stream()
+                                        .filter(x -> sumUp(x) > 0)
+                                        .collect(Collectors.toList())
+                        );
 
-                    } catch (InterruptedException e) {
+
+                    } catch (InterruptedException | JSONException | IOException e) {
                         throw new RuntimeException(e);
                     }
 //                    for(short[] array: listOfRecords){
@@ -149,6 +167,15 @@ public class LabelWindow extends Activity {
 
                     training = false;
                 }
+            }
+
+            public int sumUp(short[] array){
+                for (short value : array) {
+                    if (value > 0) {
+                        return 1;
+                    }
+                }
+                return -1;
             }
         });
 
@@ -180,12 +207,6 @@ public class LabelWindow extends Activity {
     }
 
     private AudioRecord createAudioRecord(int repeats) {
-        int bufferSize = AudioRecord.getMinBufferSize(
-                44100,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-        );
-
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO)
@@ -211,7 +232,9 @@ public class LabelWindow extends Activity {
                 // app-defined int constant. The callback method gets the
                 // result of the request.
             }
+
         }
+
         AudioRecord audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
                 44100,
@@ -223,22 +246,38 @@ public class LabelWindow extends Activity {
         return audioRecord;
     }
 
-    private void buildAndSendRequest(List<short[]> listOfRecords) throws IOException {
-        URL url = new URL("http://example.com/add_training_data");
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("POST");
+    private void buildAndSendRequest(String placeLabel, List<short[]> listOfRecords) throws IOException, JSONException {
+        Log.i("BuildAndSendRequest", "Sending request");
+        CronetProviderInstaller.installProvider(this);
+        CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
+        CronetEngine cronetEngine = myBuilder.build();
 
-        Map<String, List<short[]>> parameters = new HashMap<>();
-        parameters.put("listOfRecords", listOfRecords);
+        Executor executor = Executors.newSingleThreadExecutor();
+        String requestUrl = "http://145.94.200.217:5000/add_new_location_point";
+        Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
+        uriBuilder.appendQueryParameter("placeLabel", placeLabel);
+        String urlWithQueryParams = uriBuilder.build().toString();
 
-        con.setDoOutput(true);
-        DataOutputStream out = new DataOutputStream(con.getOutputStream());
-        out.writeBytes(getParamsString(parameters));
-        out.flush();
-        out.close();
+        int count = 1;
+        JSONObject jsonObject = new JSONObject();
+        for(short[] array: listOfRecords){
+            jsonObject.put(String.valueOf(count), Arrays.toString(array));
+            count++;
+        }
+        String requestBody = jsonObject.toString();
 
-        con.setRequestProperty("Content-Type", "application/json");
-        InputStream inputStream = con.getInputStream();
+        UploadDataProvider uploadDataProvider = UploadDataProviders.create(requestBody.getBytes(), 0, requestBody.getBytes().length);
+
+        UrlRequest.Builder requestBuilder = cronetEngine
+                .newUrlRequestBuilder(
+                        urlWithQueryParams, new MyUrlRequestCallback(), executor)
+                .setHttpMethod("POST")
+                .addHeader("Content-Type", "application/json")
+                .setUploadDataProvider(uploadDataProvider, executor);
+
+        UrlRequest request = requestBuilder.build();
+        request.start();
+        Log.i("BuildAndSendRequest", "request.start() executed");
     }
 
     public static String getParamsString(Map<String, List<short[]>> params)
