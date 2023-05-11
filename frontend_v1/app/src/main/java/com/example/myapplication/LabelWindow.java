@@ -9,6 +9,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -16,22 +17,44 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-
+import org.json.JSONArray;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
 import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
 import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
+import com.example.myapplication.RequestCallbacks.MyUrlRequestCallback;
+import com.google.android.gms.net.CronetProviderInstaller;
 
-import java.lang.reflect.Array;
+import org.chromium.net.CronetEngine;
+import org.chromium.net.UploadDataProvider;
+import org.chromium.net.UploadDataProviders;
+import org.chromium.net.UrlRequest;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 
 
 public class LabelWindow extends Activity {
+
+    private final int CHIRP_FREQUENCY = 5000;
+
     // Back is disabled during labelling
     boolean training = false;
     @Override
@@ -51,6 +74,7 @@ public class LabelWindow extends Activity {
         TextView label = (TextView) findViewById(R.id.label_of_room);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
+        TextView progress = (TextView) findViewById(R.id.textView4);
 
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
         if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP){
@@ -89,9 +113,10 @@ public class LabelWindow extends Activity {
                     int freq1 = 21500;
                     int freq2 = 22000;
                     float duration = 0.002f;
-                    int repeatChirp = 101;
-                    EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
-//                    chirpStackOFVersion.playSoundOnce();
+                    int repeatChirp = 5;
+//                  
+                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
+                  
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
                     System.out.println(audioRecord.getState());
                     CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
@@ -99,14 +124,18 @@ public class LabelWindow extends Activity {
                     Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     List<short[]> listOfRecords = new ArrayList<>();
                     TimerTask task = new TimerTask() {
+                        int count = 0;
                         @Override
                         public void run() {
+                            
 //                            System.out.println(captureAcousticEcho.buffer);
                             listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
                             captureAcousticEcho.stopCapture();
                             captureAcousticEcho.startCapture();
-                            chirpStackOFVersion.playSoundOnce();
-
+                            //chirpStackOFVersion.playSoundOnce();
+                            chirpEmitter.playOnce();
+//                            count++;
+//                            progress.setText(String.valueOf(count));
                         }
                     };
 
@@ -125,18 +154,39 @@ public class LabelWindow extends Activity {
 
                         audioRecord = null;
 
+                        buildAndSendRequest(
+                                "room1",
+                                listOfRecords
+                                        .stream()
+                                        .filter(x -> sumUp(x) > 0)
+                                        .collect(Collectors.toList())
+                        );
 
-                    } catch (InterruptedException e) {
+
+                    } catch (InterruptedException | JSONException | IOException e) {
                         throw new RuntimeException(e);
                     }
 //                    for(short[] array: listOfRecords){
 //                        System.out.println(array);
 //                    }
+
                     new Thread(() -> {
                         ServerCommunication.addRoom(new Room(listOfRecords, label_text, "myBuilding"));
                     }).start();
+
+                    chirpEmitter.destroy();
+
                     training = false;
                 }
+            }
+
+            public int sumUp(short[] array){
+                for (short value : array) {
+                    if (value > 0) {
+                        return 1;
+                    }
+                }
+                return -1;
             }
         });
 
@@ -168,12 +218,6 @@ public class LabelWindow extends Activity {
     }
 
     private AudioRecord createAudioRecord(int repeats) {
-        int bufferSize = AudioRecord.getMinBufferSize(
-                44100,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-        );
-
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO)
@@ -199,16 +243,69 @@ public class LabelWindow extends Activity {
                 // app-defined int constant. The callback method gets the
                 // result of the request.
             }
+
         }
+
         AudioRecord audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100*0.1*2*repeats) // sampleRate*duration*2*repeats
+                (int) (44100*0.1*2*100) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;
+    }
+
+    private void buildAndSendRequest(String placeLabel, List<short[]> listOfRecords) throws IOException, JSONException {
+        Log.i("BuildAndSendRequest", "Sending request");
+        CronetProviderInstaller.installProvider(this);
+        CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
+        CronetEngine cronetEngine = myBuilder.build();
+
+        Executor executor = Executors.newSingleThreadExecutor();
+        String requestUrl = "http://145.94.200.217:5000/add_new_location_point";
+        Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
+        uriBuilder.appendQueryParameter("placeLabel", placeLabel);
+        String urlWithQueryParams = uriBuilder.build().toString();
+
+        int count = 1;
+        JSONObject jsonObject = new JSONObject();
+        for(short[] array: listOfRecords){
+            jsonObject.put(String.valueOf(count), Arrays.toString(array));
+            count++;
+        }
+        String requestBody = jsonObject.toString();
+
+        UploadDataProvider uploadDataProvider = UploadDataProviders.create(requestBody.getBytes(), 0, requestBody.getBytes().length);
+
+        UrlRequest.Builder requestBuilder = cronetEngine
+                .newUrlRequestBuilder(
+                        urlWithQueryParams, new MyUrlRequestCallback(), executor)
+                .setHttpMethod("POST")
+                .addHeader("Content-Type", "application/json")
+                .setUploadDataProvider(uploadDataProvider, executor);
+
+        UrlRequest request = requestBuilder.build();
+        request.start();
+        Log.i("BuildAndSendRequest", "request.start() executed");
+    }
+
+    public static String getParamsString(Map<String, List<short[]>> params)
+            throws UnsupportedEncodingException {
+        StringBuilder result = new StringBuilder();
+
+        for (Map.Entry<String, List<short[]>> entry : params.entrySet()) {
+            result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+            result.append("=");
+            result.append(URLEncoder.encode(entry.getValue().toString(), "UTF-8"));
+            result.append("&");
+        }
+
+        String resultString = result.toString();
+        return resultString.length() > 0
+                ? resultString.substring(0, resultString.length() - 1)
+                : resultString;
     }
 }
 
