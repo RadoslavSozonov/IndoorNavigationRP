@@ -20,7 +20,7 @@ import android.widget.TextView;
 import org.json.JSONArray;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
+import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
 import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
 import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
@@ -50,7 +50,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+
 public class LabelWindow extends Activity {
+
+    private final int CHIRP_FREQUENCY = 5000;
+
     // Back is disabled during labelling
     boolean training = false;
     @Override
@@ -110,8 +114,9 @@ public class LabelWindow extends Activity {
                     int freq2 = 22000;
                     float duration = 0.002f;
                     int repeatChirp = 5;
-                    EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
-//                    chirpStackOFVersion.playSoundOnce();
+//                  
+                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
+                  
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
                     System.out.println(audioRecord.getState());
                     CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
@@ -122,14 +127,15 @@ public class LabelWindow extends Activity {
                         int count = 0;
                         @Override
                         public void run() {
+                            
 //                            System.out.println(captureAcousticEcho.buffer);
                             listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
                             captureAcousticEcho.stopCapture();
                             captureAcousticEcho.startCapture();
-                            chirpStackOFVersion.playSoundOnce();
+                            //chirpStackOFVersion.playSoundOnce();
+                            chirpEmitter.playOnce();
 //                            count++;
 //                            progress.setText(String.valueOf(count));
-
                         }
                     };
 
@@ -165,6 +171,7 @@ public class LabelWindow extends Activity {
 //                    }
 
 
+                    chirpEmitter.destroy();
                     training = false;
                 }
             }
