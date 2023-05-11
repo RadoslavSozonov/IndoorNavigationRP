@@ -3,6 +3,9 @@ from uuid import uuid4
 from flask import Flask, request 
 import firebase_admin
 from firebase_admin import credentials, firestore
+from scipy.io.wavfile import write
+import numpy as np
+
 
 APP = Flask(__name__)
 UNSAVED_ROOMS = {"1234": Room(None)}
@@ -33,14 +36,20 @@ def add_room():
         #room_uuid = uuid4()
         #UNSAVED_ROOMS.update({room_uuid: room})
         room_data = request.json
+        room_label = room_data['room_label']
+        building_label = room_data['building_label']
         room_audio = room_data['audio']
+        
+        
+        update_time, doc_ref = db.collection(building_label).add({})
         data = {
-            #u'building': building_label,
-            #u'room': room_label,
-            'audio': room_audio
-            #u'uuid':room_uuid
+            u'building': building_label,
+            u'room': room_label,
+            #'audio': room_audio
+            u'uuid':doc_ref.id
         }
-        db.collection("tests").document("testt").set(data)
+        #write("test.wav", 44100, room_audio.astype(np.int16))
+        doc_ref.set(data)
 
         return 'OK'
         #return room_uuid

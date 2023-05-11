@@ -43,7 +43,7 @@ public class ServerCommunication {
         }
     }
 
-    public static void addRoom(List<short[]> audiolist) {
+    public static void addRoom(Room room) {
         URL url = null;
 
         try {
@@ -53,7 +53,8 @@ public class ServerCommunication {
         }
 
         try {
-            String body = "{\"audio\": " + new Gson().toJson(audiolist) + "}";
+            //String body = "{\"audio\": " + new Gson().toJson(audiolist) + "}";
+            String body = new Gson().toJson(room);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");

@@ -133,7 +133,7 @@ public class LabelWindow extends Activity {
 //                        System.out.println(array);
 //                    }
                     new Thread(() -> {
-                        ServerCommunication.addRoom(listOfRecords);
+                        ServerCommunication.addRoom(new Room(listOfRecords, label_text, "myBuilding"));
                     }).start();
                     training = false;
                 }
