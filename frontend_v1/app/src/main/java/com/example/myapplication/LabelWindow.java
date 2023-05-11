@@ -50,7 +50,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
+
 public class LabelWindow extends Activity {
+
+    private final int CHIRP_FREQUENCY = 5000;
+
     // Back is disabled during labelling
     boolean training = false;
     @Override
@@ -111,7 +115,7 @@ public class LabelWindow extends Activity {
                     float duration = 0.002f;
                     int repeatChirp = 5;
 //                  
-                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(1000);
+                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
                   
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
                     System.out.println(audioRecord.getState());
