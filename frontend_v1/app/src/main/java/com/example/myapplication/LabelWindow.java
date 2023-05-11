@@ -12,7 +12,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
+import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,22 +44,43 @@ public class LabelWindow extends Activity {
             @Override
             public void onClick(View v) {
                 if(!training) {
-                    // get and set rooms label from user input
-                    String label_text = label.getText().toString();
-                    sent_label.setText(label_text);
-                    // Disable back button while labeling
-                    training = true;
-                    // TODO: chirp and receive 500 echos, then send them to server
-                    int freq1 = 19500;
-                    int freq2 = 20500;
-                    float duration = 0.002f;
                     int repeatChirp = 50;
-                    EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
-//                    chirpStackOFVersion.playSoundOnce();
+                    training = true;
+
+//                    // get and set rooms label from user input
+//                    String label_text = label.getText().toString();
+//                    sent_label.setText(label_text);
+//                    // Disable back button while labeling
+//                    // TODO: chirp and receive 500 echos, then send them to server
+//                    int freq1 = 20000;
+//                    int freq2 = 20000;
+//                    float duration = 0.2f;
+//                    EmitChirpStackOFVersion chirpStackOFVersion = new EmitChirpStackOFVersion(freq1, freq2, duration);
+////                    chirpStackOFVersion.playSoundOnce();
+//                    TimerTask task = new TimerTask() {
+//                        @Override
+//                        public void run() {
+//                            chirpStackOFVersion.playSoundOnce();
+//                        }
+//                    };
+//
+//                    Timer timer = new Timer("Timer");
+//
+//                    timer.scheduleAtFixedRate(task, 0L, 100L);
+//
+//                    try {
+//                        Thread.sleep(100L*repeatChirp);
+//                        timer.cancel();
+//                    } catch (InterruptedException e) {
+//                        throw new RuntimeException(e);
+//                    }
+
+                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(1000);
+
                     TimerTask task = new TimerTask() {
                         @Override
                         public void run() {
-                            chirpStackOFVersion.playSoundOnce();
+                            chirpEmitter.playOnce();
                         }
                     };
 
@@ -74,6 +95,7 @@ public class LabelWindow extends Activity {
                         throw new RuntimeException(e);
                     }
 
+                    chirpEmitter.destroy();
                     training = false;
                 }
             }

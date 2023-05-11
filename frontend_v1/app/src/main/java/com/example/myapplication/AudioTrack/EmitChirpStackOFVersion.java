@@ -11,6 +11,8 @@ public class EmitChirpStackOFVersion {
 
 
     private AudioTrack audioTrack = null;
+
+    // I (roald) decided to write some comments to get some understanding
     public EmitChirpStackOFVersion(int freq1, int freq2, float duration){
         this.duration=duration;
         this.freq1=freq1;
@@ -22,11 +24,16 @@ public class EmitChirpStackOFVersion {
         byte[] generatedSnd= new byte[2*numSample];
         double instfreq=0, numerator;
 //        float c = (this.freq2 - this.freq1)/this.duration;
+
         System.out.println(numSample);
-        for (int i=0;i<numSample; i++ ) {
-            numerator=(double)(i)/(double)numSample; // t
-            instfreq=freq1+(numerator*(this.freq2-this.freq1));
-            sample[i]=Math.sin(2*Math.PI*i/(sampleRate/instfreq));
+
+        for (int i=0;i<numSample; i++) {
+            numerator=(double)(i)/(double)numSample; // t (between 0 and 1)
+
+            instfreq=freq1+(numerator*(this.freq2-this.freq1)); // results in a value between freq1 and freq2
+
+            sample[i]=Math.sin(2*Math.PI*i/(sampleRate/instfreq)); // not sure what this is supposed to mean
+
 //            sample[i] = Math.sin(2*Math.PI*(freq1 + ((freq2-freq1)*numerator)/duration));
             System.out.println(sample[i]);
         }
