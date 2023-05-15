@@ -71,7 +71,8 @@ public class LabelWindow extends Activity {
         setContentView(R.layout.popup_label);
 
         // Get layout components
-        TextView label = (TextView) findViewById(R.id.label_of_room);
+        TextView room_label = (TextView) findViewById(R.id.label_of_room);
+        TextView building_label = (TextView) findViewById(R.id.label_of_room);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
@@ -105,8 +106,9 @@ public class LabelWindow extends Activity {
             public void onClick(View v) {
                 if(!training) {
                     // get and set rooms label from user input
-                    String label_text = label.getText().toString();
-                    sent_label.setText(label_text);
+                    String label_room_text = room_label.getText().toString();
+                    String label_building_text = building_label.getText().toString();
+                    sent_label.setText(label_room_text + " " + label_building_text);
                     // Disable back button while labeling
                     training = true;
                     // TODO: chirp and receive 500 echos, then send them to server
@@ -116,7 +118,6 @@ public class LabelWindow extends Activity {
                     int repeatChirp = 5;
 //                  
                     ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
-                  
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
                     System.out.println(audioRecord.getState());
                     CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
@@ -171,7 +172,7 @@ public class LabelWindow extends Activity {
 //                    }
 
                     new Thread(() -> {
-                        ServerCommunication.addRoom(new Room(listOfRecords, label_text.trim(), "myBuilding"));
+                        ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()));
                     }).start();
 
                     chirpEmitter.destroy();
