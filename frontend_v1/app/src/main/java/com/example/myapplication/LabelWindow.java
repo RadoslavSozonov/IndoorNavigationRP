@@ -171,7 +171,7 @@ public class LabelWindow extends Activity {
 //                    }
 
                     new Thread(() -> {
-                        ServerCommunication.addRoom(new Room(listOfRecords, label_text, "myBuilding"));
+                        ServerCommunication.addRoom(new Room(listOfRecords, label_text.trim(), "myBuilding"));
                     }).start();
 
                     chirpEmitter.destroy();
