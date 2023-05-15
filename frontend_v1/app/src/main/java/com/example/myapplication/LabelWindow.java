@@ -3,6 +3,7 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
@@ -76,6 +77,11 @@ public class LabelWindow extends Activity {
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
+
+
+        // get server IP
+        Intent intent = getIntent();
+        String server_ip = intent.getStringExtra("server_ip");
 
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
         if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP){
@@ -172,7 +178,7 @@ public class LabelWindow extends Activity {
 //                    }
 
                     new Thread(() -> {
-                        ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()));
+                        ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
                     }).start();
 
                     chirpEmitter.destroy();

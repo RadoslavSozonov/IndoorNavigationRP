@@ -12,12 +12,13 @@ import java.net.URL;
 import java.util.List;
 
 
+
 public class ServerCommunication {
-    public static String get_room_list() {
+    public static String get_room_list(String ip) {
         URL url = null;
 
         try {
-            url = new URL("http://192.168.50.77:5000/get_rooms");
+            url = new URL("http://" + ip +":5000/get_rooms");
         } catch (MalformedURLException e) {
             return "";
         }
@@ -43,11 +44,11 @@ public class ServerCommunication {
         }
     }
 
-    public static void addRoom(Room room) {
+    public static void addRoom(Room room, String ip) {
         URL url = null;
 
         try {
-            url = new URL("http://192.168.50.77:5000/add_room");
+            url = new URL("http://" + ip +":5000/add_room");
         } catch (MalformedURLException e) {
             return;
         }

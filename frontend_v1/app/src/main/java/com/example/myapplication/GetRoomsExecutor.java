@@ -8,14 +8,17 @@ public class GetRoomsExecutor implements Runnable{
 
     MainActivity mainActivity;
 
-    public GetRoomsExecutor(String room_list, MainActivity mainActivity){
+    String ip;
+
+    public GetRoomsExecutor(String room_list, MainActivity mainActivity, String ip){
         this.room_list = room_list;
         this.mainActivity = mainActivity;
+        this.ip = ip;
     }
 
     @Override
     public void run() {
-        this.room_list = ServerCommunication.get_room_list();
+        this.room_list = ServerCommunication.get_room_list(ip);
         this.mainActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {

@@ -37,6 +37,8 @@
             android:theme="@style/Theme.PopUpStuck"></activity>
         <activity android:name=".TopFiveWindow"
             android:theme="@style/Theme.PopUpStuck"></activity>
+        <activity android:name=".SetServerIp"
+            android:theme="@style/Theme.PopUpStuck"></activity>
     </application>
 
 </manifest>
