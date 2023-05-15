@@ -23,9 +23,6 @@ public class CaptureAcousticEcho implements Runnable {
 
     public short[] buffer = new short[1];
 
-    public boolean onceStarted = false;
-
-
     public CaptureAcousticEcho(AudioRecord audioRecord) {
         this.audioRecord = audioRecord;
 
@@ -33,35 +30,24 @@ public class CaptureAcousticEcho implements Runnable {
 
     public void stopCapture(){
         this.capture = false;
-//        audioRecord.stop();
-//        audioRecord.release();
     }
 
     public void startCapture() {
         this.capture = true;
-        onceStarted = true;
     }
 
     public void stopThread(){
         this.stopThread = true;
-//        audioRecord.stop();
-//        audioRecord.release();
     }
 
 
     @Override
     public void run() {
+        this.buffer= new short[(int) (44100*0.1)];// should be 44100*0.1
         while(!this.stopThread){
-            this.buffer= new short[(int) (44100*0.1)];// should be 44100*0.1
-            int records = 0;
             while (this.capture){
-                records = audioRecord.read(this.buffer, 0, buffer.length);
-//                System.out.println(records);
-            }
-            if(onceStarted){
-//                System.out.println(records);
+                audioRecord.read(this.buffer, 0, buffer.length);
             }
         }
-
     }
 }

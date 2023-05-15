@@ -126,45 +126,25 @@ public class LabelWindow extends Activity {
                     CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
                     Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     List<short[]> listOfRecords = new ArrayList<>();
-                    TimerTask task = new TimerTask() {
-                        int count = 0;
-                        @Override
-                        public void run() {
-
-                            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
-                            captureAcousticEcho.stopCapture();
-                            captureAcousticEcho.startCapture();
-
-                            chirpEmitter.playOnce();
-                        }
-                    };
-
-                    Timer timer = new Timer("Timer");
-                    threadCapture.start();
 
                     audioRecord.startRecording();
-                    timer.scheduleAtFixedRate(task, 0L, 100L);
+                    threadCapture.start();
 
-                    try {
-                        Thread.sleep(100L*repeatChirp);
-                        timer.cancel();
-                        audioRecord.stop();
-                        audioRecord.release();
-                        captureAcousticEcho.stopThread();
-
-
-                        buildAndSendRequest(
-                                "room1",
-                                listOfRecords
-                                        .stream()
-                                        .filter(x -> sumUp(x) > 0)
-                                        .collect(Collectors.toList())
-                        );
-
-
-                    } catch (InterruptedException | JSONException | IOException e) {
-                        throw new RuntimeException(e);
+                    for(int i = 0; i < repeatChirp; i++) {
+                        captureAcousticEcho.stopCapture();
+                        chirpEmitter.playOnce();
+                        try {
+                            Thread.sleep(100L);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        captureAcousticEcho.startCapture();
+                        listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
                     }
+
+                    audioRecord.stop();
+                    audioRecord.release();
+                    captureAcousticEcho.stopThread();
 
                     new Thread(() -> {
                         ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
@@ -174,15 +154,6 @@ public class LabelWindow extends Activity {
 
                     training = false;
                 }
-            }
-
-            public int sumUp(short[] array){
-                for (short value : array) {
-                    if (value > 0) {
-                        return 1;
-                    }
-                }
-                return -1;
             }
         });
 

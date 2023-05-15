@@ -8,6 +8,8 @@ public class ChirpEmitterBisccitAttempt {
 
     private AudioTrack audioTrack;
 
+    private short[] buffer;
+
     public ChirpEmitterBisccitAttempt(double frequency) {
         int sampleRate = 44100;
         int bufferSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
@@ -21,7 +23,7 @@ public class ChirpEmitterBisccitAttempt {
                 AudioTrack.MODE_STATIC
         );
 
-        double duration = 1.0;
+        double duration = 0.02;
         double amplitude = 1.0; // between -1.0 and 1.0
         int numSamples = (int)(duration * sampleRate);
 
@@ -39,6 +41,8 @@ public class ChirpEmitterBisccitAttempt {
 
     public void playOnce() {
         audioTrack.play();
+        audioTrack.stop();
+        audioTrack.reloadStaticData();
     }
 
     public void destroy() {

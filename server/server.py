@@ -15,6 +15,13 @@ app = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 
+def create_spectrogram(array, filename):
+    f, t, Sxx = spectrogram(array, 44100, window=hann(256, sym=False))
+    plt.pcolormesh(t, f, Sxx, shading='gouraud')
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
+    plt.savefig(filename)
+
 @APP.route('/get_rooms', methods=['GET'])
 def get_rooms():
     room_list = []
@@ -51,11 +58,10 @@ def add_room():
     concatenatedAudio = sum(room_audio, [])
     arr = np.asarray(concatenatedAudio).astype(np.int16)
 
-    f, t, Sxx = spectrogram(arr, 44100, window=hann(256, sym=False))
-    plt.pcolormesh(t, f, Sxx, shading='gouraud')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.savefig('test.jpg')
+    counter = 0
+    for track in room_audio:
+        create_spectrogram(np.asarray(track), 'tarck' + str(counter) + '.jpg')
+        counter += 1
     
     write(filename, 44100, arr)
 
