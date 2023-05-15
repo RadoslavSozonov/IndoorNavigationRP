@@ -1,15 +1,19 @@
 package com.example.myapplication;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 
 
@@ -36,7 +40,15 @@ public class ServerCommunication {
                     response.append(inputLine);
                 }
                 in.close();
-                return response.toString();
+                String json_string = response.toString();
+                Type building_map_type = new TypeToken<Map<String, String[]>>() {}.getType();
+                Map<String, String[]> rooms = new Gson().fromJson(json_string, building_map_type);
+
+                String final_list = "";
+                for(Map.Entry<String, String[]> entry: rooms.entrySet()) {
+                    final_list += entry.getKey() + ": " + Arrays.toString(entry.getValue()) + "\n";
+                }
+                return final_list;
             } else return "Server returned response: " + status_code;
         } catch (IOException e) {
             e.printStackTrace();

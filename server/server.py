@@ -2,27 +2,31 @@ from flask import Flask, request
 import firebase_admin
 from firebase_admin import credentials, firestore
 from scipy.io.wavfile import write
+from scipy.signal import spectrogram
+from scipy.signal.windows import hann
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 APP = Flask(__name__)
 
 cred = credentials.Certificate('key.json')
-
 app = firebase_admin.initialize_app(cred)
-
 db = firestore.client()
 
 
 @APP.route('/get_rooms', methods=['GET'])
 def get_rooms():
     room_list = []
+    response_body = {}
     collections = db.collections()
     for collection in collections:
         for document in collection.list_documents():
-            room_list.append(document.get().to_dict())
+            room_list.append(document.get().to_dict()["room"])
+        response_body.update({collection.id: room_list})
+        room_list = []
 
-    return ' '.join(room['room'] for room in room_list)
+    return response_body
 
 @APP.route('/add_room', methods=['POST'])
 def add_room():
@@ -40,13 +44,20 @@ def add_room():
         u'audio': "Currently stored locally",
         u'uuid':doc_ref.id
     }
+
     doc_ref.update(data)
 
     filename = doc_ref.id + ".wav"
     concatenatedAudio = sum(room_audio, [])
-    arr = np.asarray(concatenatedAudio)
-    print(arr)
-    write(filename, 44100, arr.astype(np.int16))
+    arr = np.asarray(concatenatedAudio).astype(np.int16)
+
+    f, t, Sxx = spectrogram(arr, 44100, window=hann(256, sym=False))
+    plt.pcolormesh(t, f, Sxx, shading='gouraud')
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
+    plt.savefig('test.jpg')
+    
+    write(filename, 44100, arr)
 
 
     return 'OK'

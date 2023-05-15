@@ -118,31 +118,24 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
                     // TODO: chirp and receive 500 echos, then send them to server
-                    int freq1 = 21500;
-                    int freq2 = 22000;
-                    float duration = 0.002f;
                     int repeatChirp = 5;
-//                  
+
                     ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
-                    AudioRecord audioRecord = createAudioRecord(repeatChirp);
-                    System.out.println(audioRecord.getState());
+                    AudioRecord audioRecord = createAudioRecord();
+
                     CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
-//                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     List<short[]> listOfRecords = new ArrayList<>();
                     TimerTask task = new TimerTask() {
                         int count = 0;
                         @Override
                         public void run() {
-                            
-//                            System.out.println(captureAcousticEcho.buffer);
+
                             listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
                             captureAcousticEcho.stopCapture();
                             captureAcousticEcho.startCapture();
-                            //chirpStackOFVersion.playSoundOnce();
+
                             chirpEmitter.playOnce();
-//                            count++;
-//                            progress.setText(String.valueOf(count));
                         }
                     };
 
@@ -159,7 +152,6 @@ public class LabelWindow extends Activity {
                         audioRecord.release();
                         captureAcousticEcho.stopThread();
 
-                        audioRecord = null;
 
                         buildAndSendRequest(
                                 "room1",
@@ -173,9 +165,6 @@ public class LabelWindow extends Activity {
                     } catch (InterruptedException | JSONException | IOException e) {
                         throw new RuntimeException(e);
                     }
-//                    for(short[] array: listOfRecords){
-//                        System.out.println(array);
-//                    }
 
                     new Thread(() -> {
                         ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
@@ -224,7 +213,7 @@ public class LabelWindow extends Activity {
         });
     }
 
-    private AudioRecord createAudioRecord(int repeats) {
+    private AudioRecord createAudioRecord() {
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO)
