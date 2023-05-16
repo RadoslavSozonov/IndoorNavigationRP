@@ -40,8 +40,9 @@ public class TrainModel extends Activity {
                 String buildingName = String.valueOf(building.getText());
 
                 try {
-                    if(trainModelName.length() > 0 && buildingName.length() > 0)
-                    trainModelRequest(buildingName, trainModelName);
+                    if(trainModelName.length() > 0 && buildingName.length() > 0) {
+                        trainModelRequest(buildingName, trainModelName);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 } catch (JSONException e) {
