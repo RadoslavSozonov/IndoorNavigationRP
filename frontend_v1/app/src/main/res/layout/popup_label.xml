@@ -22,8 +22,19 @@
         android:id="@+id/label_of_room"
         android:layout_width="253dp"
         android:layout_height="43dp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="20dp"
         android:hint="Label"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/label_of_building" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/label_of_building"
+        android:layout_width="253dp"
+        android:layout_height="43dp"
+        android:layout_marginTop="32dp"
+        android:hint="Building"
         android:inputType="text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

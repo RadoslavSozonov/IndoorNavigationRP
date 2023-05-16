@@ -18,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Components of the layout
+        Button train_model = (Button) findViewById((R.id.trainModel));
         Button button_recognize = (Button) findViewById(R.id.button_recognize);
         Button button_label_room = (Button) findViewById(R.id.button_label_room);
         Button button_top_5 = (Button) findViewById(R.id.button_top_5);
@@ -26,6 +27,16 @@ public class MainActivity extends AppCompatActivity {
 
         // TODO: show all rooms in the database
         list_of_rooms.setText("room1 \nroom2");
+
+        train_model.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Make a pop up asking for the label
+                Intent intent = new Intent(MainActivity.this, TrainModel.class);
+
+                startActivity(intent);
+            }
+        });
 
 
         // Popup for recognizing the current room

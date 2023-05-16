@@ -72,6 +72,7 @@ public class LabelWindow extends Activity {
 
         // Get layout components
         TextView label = (TextView) findViewById(R.id.label_of_room);
+        TextView labelOfBuilding = (TextView) findViewById(R.id.label_of_building);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
@@ -113,13 +114,13 @@ public class LabelWindow extends Activity {
                     int freq1 = 21500;
                     int freq2 = 22000;
                     float duration = 0.002f;
-                    int repeatChirp = 50;
+                    int repeatChirp = 502;
 //                  
                     ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
                   
                     AudioRecord audioRecord = createAudioRecord(repeatChirp);
                     System.out.println(audioRecord.getState());
-                    CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
+                    CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord, repeatChirp);
 //                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
                     List<short[]> listOfRecords = new ArrayList<>();
@@ -127,39 +128,40 @@ public class LabelWindow extends Activity {
                         int count = 0;
                         @Override
                         public void run() {
-                            
-//                            System.out.println(captureAcousticEcho.buffer);
-                            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
-                            captureAcousticEcho.stopCapture();
-                            captureAcousticEcho.startCapture();
-                            //chirpStackOFVersion.playSoundOnce();
+//                            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
+//                            captureAcousticEcho.stopCapture();
+//                            captureAcousticEcho.startCapture();
+
                             chirpEmitter.playOnce();
-//                            count++;
-//                            progress.setText(String.valueOf(count));
                         }
                     };
 
                     Timer timer = new Timer("Timer");
-                    threadCapture.start();
+//                    threadCapture.start();
 
                     audioRecord.startRecording();
-                    timer.scheduleAtFixedRate(task, 0L, 100L);
+
+                    timer.scheduleAtFixedRate(task, 1L, 100L);
+                    threadCapture.start();
 
                     try {
                         Thread.sleep(100L*repeatChirp);
+                        captureAcousticEcho.stopCapture();
                         timer.cancel();
                         audioRecord.stop();
                         audioRecord.release();
                         captureAcousticEcho.stopThread();
+                        listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
 
                         audioRecord = null;
 
                         buildAndSendRequest(
-                                "room1",
+                                String.valueOf(label.getText()),
                                 listOfRecords
                                         .stream()
                                         .filter(x -> sumUp(x) > 0)
-                                        .collect(Collectors.toList())
+                                        .collect(Collectors.toList()),
+                                String.valueOf(labelOfBuilding.getText())
                         );
 
 
@@ -247,22 +249,23 @@ public class LabelWindow extends Activity {
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100*0.1*2*100) // sampleRate*duration*2*repeats
+                (int) (44100*0.1*200) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;
     }
 
-    private void buildAndSendRequest(String placeLabel, List<short[]> listOfRecords) throws IOException, JSONException {
+    private void buildAndSendRequest(String placeLabel, List<short[]> listOfRecords, String building) throws IOException, JSONException {
         Log.i("BuildAndSendRequest", "Sending request");
         CronetProviderInstaller.installProvider(this);
         CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
         CronetEngine cronetEngine = myBuilder.build();
 
         Executor executor = Executors.newSingleThreadExecutor();
-        String requestUrl = "http://145.94.200.217:5000/add_new_location_point";
+        String requestUrl = " http://192.168.56.1:5000/add_new_location_point";
         Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
         uriBuilder.appendQueryParameter("placeLabel", placeLabel);
+        uriBuilder.appendQueryParameter("buildingLabel", building);
         String urlWithQueryParams = uriBuilder.build().toString();
 
         int count = 1;
@@ -284,67 +287,7 @@ public class LabelWindow extends Activity {
 
         UrlRequest request = requestBuilder.build();
         request.start();
+
         Log.i("BuildAndSendRequest", "request.start() executed");
     }
-
-    public static String getParamsString(Map<String, List<short[]>> params)
-            throws UnsupportedEncodingException {
-        StringBuilder result = new StringBuilder();
-
-        for (Map.Entry<String, List<short[]>> entry : params.entrySet()) {
-            result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(entry.getValue().toString(), "UTF-8"));
-            result.append("&");
-        }
-
-        String resultString = result.toString();
-        return resultString.length() > 0
-                ? resultString.substring(0, resultString.length() - 1)
-                : resultString;
-    }
 }
-
-/*
-public void playCodeFromChatGPT4(int freq1, int freq2, float duration) {
-                int SAMPLE_RATE = 44100; // Hz
-                int CHIRP_FREQ_START = freq1; // Hz
-                int CHIRP_FREQ_END = freq2; // Hz
-                float CHIRP_DURATION = duration; // ms
-                int BUFFER_SIZE = (int) (SAMPLE_RATE * CHIRP_DURATION); // samples
-
-                // Create AudioTrack object
-                AudioTrack audioTrack = new AudioTrack.Builder()
-                        .setAudioAttributes(new AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_ALARM)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                .build())
-                        .setAudioFormat(new AudioFormat.Builder()
-                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                                .setSampleRate(SAMPLE_RATE)
-                                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                                .build())
-                        .setBufferSizeInBytes(BUFFER_SIZE * 2)
-                        .build();
-
-                // Create buffer
-                short[] buffer = new short[BUFFER_SIZE];
-
-                // Fill buffer with chirp waveform
-                for (int i = 0; i < BUFFER_SIZE; i++) {
-                    double t = (double) i / SAMPLE_RATE;
-                    double freq = CHIRP_FREQ_START + (CHIRP_FREQ_END - CHIRP_FREQ_START) * t / (CHIRP_DURATION );
-                    // fo + ((f1 - fo) * t)/T
-                    double y = Math.sin(2 * Math.PI * freq * t);
-                    //2*PI*t * (fo + ((f1 - fo) * t)/T)
-                    //2*PI*t*fo + 2*PI*t^2*c -> c = (f1-fo)/T
-                    //2*PI*t*fo + 2*PI*t^2*c
-                    buffer[i] = (short) (y * Short.MAX_VALUE);
-                }
-
-                // Write buffer to AudioTrack and start playback
-                audioTrack.write(buffer, 0, BUFFER_SIZE);
-                audioTrack.play();
-                System.out.println("Sound played Chat");
-            }
- */

@@ -31,6 +31,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".TrainModel"
+            android:theme="@style/Theme.PopUpStuck"></activity>
         <activity android:name=".RecognizeWindow"
             android:theme="@style/Theme.PopUp"></activity>
         <activity android:name=".LabelWindow"
