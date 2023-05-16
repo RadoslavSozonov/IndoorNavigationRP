@@ -59,7 +59,6 @@ public class LabelWindow extends Activity {
     boolean training = false;
     @Override
     public void onBackPressed() {
-        System.out.println("Hey");
         if (!training) {
             super.onBackPressed();
         }
@@ -111,14 +110,11 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
                     // TODO: chirp and receive 500 echos, then send them to server
-                    int freq1 = 21500;
-                    int freq2 = 22000;
-                    float duration = 0.002f;
                     int repeatChirp = 502;
 //                  
                     ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
                   
-                    AudioRecord audioRecord = createAudioRecord(repeatChirp);
+                    AudioRecord audioRecord = createAudioRecord();
                     System.out.println(audioRecord.getState());
                     CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord, repeatChirp);
 //                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
@@ -128,19 +124,12 @@ public class LabelWindow extends Activity {
                         int count = 0;
                         @Override
                         public void run() {
-//                            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
-//                            captureAcousticEcho.stopCapture();
-//                            captureAcousticEcho.startCapture();
-
                             chirpEmitter.playOnce();
                         }
                     };
 
                     Timer timer = new Timer("Timer");
-//                    threadCapture.start();
-
                     audioRecord.startRecording();
-
                     timer.scheduleAtFixedRate(task, 1L, 100L);
                     threadCapture.start();
 
@@ -168,10 +157,6 @@ public class LabelWindow extends Activity {
                     } catch (InterruptedException | JSONException | IOException e) {
                         throw new RuntimeException(e);
                     }
-//                    for(short[] array: listOfRecords){
-//                        System.out.println(array);
-//                    }
-
 
                     chirpEmitter.destroy();
                     training = false;
@@ -215,7 +200,7 @@ public class LabelWindow extends Activity {
         });
     }
 
-    private AudioRecord createAudioRecord(int repeats) {
+    private AudioRecord createAudioRecord() {
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO)
