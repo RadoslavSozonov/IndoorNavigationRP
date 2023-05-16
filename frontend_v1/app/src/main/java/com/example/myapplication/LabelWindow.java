@@ -73,7 +73,7 @@ public class LabelWindow extends Activity {
 
         // Get layout components
         TextView room_label = (TextView) findViewById(R.id.label_of_room);
-        TextView building_label = (TextView) findViewById(R.id.label_of_room);
+        TextView building_label = (TextView) findViewById(R.id.label_of_building);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
