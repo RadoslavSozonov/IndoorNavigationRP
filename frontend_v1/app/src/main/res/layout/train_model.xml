@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/building_name_train"
+        android:layout_width="253dp"
+        android:layout_height="43dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="36dp"
+        android:hint="Building"
+        android:inputType="text"
+        app:layout_constraintBottom_toTopOf="@+id/train_model"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/train_model"
+        android:layout_width="253dp"
+        android:layout_height="43dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
+        android:hint="Model"
+        android:inputType="text"
+        app:layout_constraintBottom_toTopOf="@+id/train"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <Button
+        android:id="@+id/train"
+        android:layout_width="83dp"
+        android:layout_height="41dp"
+        android:layout_marginBottom="16dp"
+        android:background="#76CF7A"
+        android:backgroundTint="#76CF7A"
+        android:text="Train"
+        app:layout_constraintBottom_toTopOf="@+id/button_back_train_window"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/button_back_train_window"
+        android:layout_width="81dp"
+        android:layout_height="41dp"
+        android:layout_marginBottom="24dp"
+        android:background="#FD6A6A"
+        android:backgroundTint="#FD6A6A"
+        android:text="Back"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
