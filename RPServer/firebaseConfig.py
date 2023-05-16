@@ -1,13 +1,13 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+# import firebase_admin
+# from firebase_admin import credentials, firestore
 from pymongo import MongoClient
 import uuid
 import numpy as np
 
 
-cred = credentials.Certificate("key.json")
-app = firebase_admin.initialize_app(cred)
-database = firestore.client()
+# cred = credentials.Certificate("key.json")
+# app = firebase_admin.initialize_app(cred)
+# database = firestore.client()
 
 client = MongoClient('localhost', 27017)
 db = client["RPServer"]
