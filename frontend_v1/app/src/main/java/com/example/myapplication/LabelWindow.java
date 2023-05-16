@@ -118,39 +118,33 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
                     // TODO: chirp and receive 500 echos, then send them to server
-                    int repeatChirp = 5;
+                    int repeatChirp = 10;
 
-                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
                     AudioRecord audioRecord = createAudioRecord();
 
-                    CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord);
-                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
+                    int buffer_size = (int) (44100 * 0.1 * repeatChirp);
+                    short[] buffer = new short[buffer_size];
+
                     List<short[]> listOfRecords = new ArrayList<>();
 
                     audioRecord.startRecording();
-                    threadCapture.start();
-
-                    for(int i = 0; i < repeatChirp; i++) {
-                        captureAcousticEcho.stopCapture();
-                        chirpEmitter.playOnce();
-                        try {
-                            Thread.sleep(100L);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            audioRecord.read(buffer, 0, buffer_size);
                         }
-                        captureAcousticEcho.startCapture();
-                        listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
-                    }
+                    }).start();
 
+                    ChirpEmitterBisccitAttempt.playSound(CHIRP_FREQUENCY, repeatChirp);
+
+                    listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
                     audioRecord.stop();
                     audioRecord.release();
-                    captureAcousticEcho.stopThread();
 
                     new Thread(() -> {
                         ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
                     }).start();
 
-                    chirpEmitter.destroy();
 
                     training = false;
                 }
