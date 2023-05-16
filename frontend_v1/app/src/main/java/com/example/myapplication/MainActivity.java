@@ -15,7 +15,9 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
     private String rooms = "";
-    private String server_ip = "";
+
+    private boolean useStaticIp = true;
+    private String server_ip = "192.168.1.14";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,8 +45,9 @@ public class MainActivity extends AppCompatActivity {
                             // code to process data from activity called
                         }
                 );
-
-        serverActivityIpLauncher.launch(server_ip_intent);
+        if(!useStaticIp) {
+            serverActivityIpLauncher.launch(server_ip_intent);
+        }
         // Popup for recognizing the current room
         button_recognize.setOnClickListener(new View.OnClickListener() {
             @Override

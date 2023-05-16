@@ -5,6 +5,8 @@ from scipy.io.wavfile import write
 from scipy.signal import spectrogram
 from scipy.signal.windows import hann
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -15,7 +17,17 @@ app = firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 
+interval = 0.1
+sample_rate = 44100
+chirp_amount = 6
+# amount of chirps that are ignored, since some of the last chirps dont work
+chirp_error_amount = 2
+chirp_sample_offset = 1600
+
+interval_rate = sample_rate * interval
+
 def create_spectrogram(array, filename):
+    print(array.shape)
     f, t, Sxx = spectrogram(array, 44100, window=hann(256, sym=False))
     plt.pcolormesh(t, f, Sxx, shading='gouraud')
     plt.ylabel('Frequency [Hz]')
@@ -54,16 +66,16 @@ def add_room():
 
     doc_ref.update(data)
 
-    filename = doc_ref.id + ".wav"
-    concatenatedAudio = sum(room_audio, [])
-    arr = np.asarray(concatenatedAudio).astype(np.int16)
-
     counter = 0
-    for track in room_audio:
-        create_spectrogram(np.asarray(track), 'tarck' + str(counter) + '.jpg')
+    np_arr = np.asarray(room_audio, dtype=np.int16)
+    for i in range(chirp_amount - chirp_error_amount):
+        start_rate = int(i * interval_rate + chirp_sample_offset)
+        sliced = np_arr[0,start_rate:(int(start_rate + interval_rate))]
+        create_spectrogram(sliced, 'tarck' + str(counter) + '.jpg')
         counter += 1
     
-    write(filename, 44100, arr)
+    # filename = doc_ref.id + ".wav"
+    # write(filename, 44100, arr)
 
 
     return 'OK'
