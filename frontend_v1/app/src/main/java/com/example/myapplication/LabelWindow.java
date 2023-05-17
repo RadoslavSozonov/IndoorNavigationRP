@@ -23,7 +23,9 @@ import androidx.core.content.ContextCompat;
 import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
 import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
+import com.example.myapplication.AudioTrack.DataRecorder;
 import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
+import com.example.myapplication.RequestCallbacks.LabelCallback;
 import com.example.myapplication.RequestCallbacks.MyUrlRequestCallback;
 import com.google.android.gms.net.CronetProviderInstaller;
 
@@ -53,7 +55,7 @@ import java.util.stream.Stream;
 
 public class LabelWindow extends Activity {
 
-    private final int CHIRP_FREQUENCY = 19500;
+
 
     // Back is disabled during labelling
     boolean training = false;
@@ -86,7 +88,7 @@ public class LabelWindow extends Activity {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                         Manifest.permission.RECORD_AUDIO)) {
 
-                    // Show an expanation to the user *asynchronously* -- don't block
+                    // Show an explanation to the user *asynchronously* -- don't block
                     // this thread waiting for the user's response! After the user
                     // sees the explanation, try again to request the permission.
 
@@ -109,56 +111,11 @@ public class LabelWindow extends Activity {
                     sent_label.setText(label_text);
                     // Disable back button while labeling
                     training = true;
-                    // TODO: chirp and receive 500 echos, then send them to server
-                    int repeatChirp = 502;
-//                  
-                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
-                  
-                    AudioRecord audioRecord = createAudioRecord();
-                    System.out.println(audioRecord.getState());
-                    CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord, repeatChirp);
-//                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
-                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
-                    List<short[]> listOfRecords = new ArrayList<>();
-                    TimerTask task = new TimerTask() {
-                        int count = 0;
-                        @Override
-                        public void run() {
-                            chirpEmitter.playOnce();
-                        }
-                    };
 
-                    Timer timer = new Timer("Timer");
-                    audioRecord.startRecording();
-                    timer.scheduleAtFixedRate(task, 1L, 100L);
-                    threadCapture.start();
+                    DataRecorder dataRecorder = new DataRecorder(52, getThis(), new LabelCallback(String.valueOf(label.getText()), String.valueOf(labelOfBuilding.getText())));
 
-                    try {
-                        Thread.sleep(100L*repeatChirp);
-                        captureAcousticEcho.stopCapture();
-                        timer.cancel();
-                        audioRecord.stop();
-                        audioRecord.release();
-                        captureAcousticEcho.stopThread();
-                        listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
+                    dataRecorder.recordData();
 
-                        audioRecord = null;
-
-                        buildAndSendRequest(
-                                String.valueOf(label.getText()),
-                                listOfRecords
-                                        .stream()
-                                        .filter(x -> sumUp(x) > 0)
-                                        .collect(Collectors.toList()),
-                                String.valueOf(labelOfBuilding.getText())
-                        );
-
-
-                    } catch (InterruptedException | JSONException | IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    chirpEmitter.destroy();
                     training = false;
                 }
             }
@@ -187,7 +144,6 @@ public class LabelWindow extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         getWindow().setAttributes(layoutParams);
 
-
         // Make a back button
         Button button_back = (Button) findViewById(R.id.button_back);
         button_back.setOnClickListener(new View.OnClickListener() {
@@ -200,79 +156,7 @@ public class LabelWindow extends Activity {
         });
     }
 
-    private AudioRecord createAudioRecord() {
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.RECORD_AUDIO)) {
-
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.RECORD_AUDIO},
-                        1);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-
-        }
-
-        AudioRecord audioRecord = new AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                44100,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100*0.1*200) // sampleRate*duration*2*repeats
-        );
-//        System.out.println(audioRecord.getBufferSizeInFrames());
-        return audioRecord;
-    }
-
-    private void buildAndSendRequest(String placeLabel, List<short[]> listOfRecords, String building) throws IOException, JSONException {
-        Log.i("BuildAndSendRequest", "Sending request");
-        CronetProviderInstaller.installProvider(this);
-        CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
-        CronetEngine cronetEngine = myBuilder.build();
-
-        Executor executor = Executors.newSingleThreadExecutor();
-        String requestUrl = " http://192.168.56.1:5000/add_new_location_point";
-        Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
-        uriBuilder.appendQueryParameter("placeLabel", placeLabel);
-        uriBuilder.appendQueryParameter("buildingLabel", building);
-        String urlWithQueryParams = uriBuilder.build().toString();
-
-        int count = 1;
-        JSONObject jsonObject = new JSONObject();
-        for(short[] array: listOfRecords){
-            jsonObject.put(String.valueOf(count), Arrays.toString(array));
-            count++;
-        }
-        String requestBody = jsonObject.toString();
-
-        UploadDataProvider uploadDataProvider = UploadDataProviders.create(requestBody.getBytes(), 0, requestBody.getBytes().length);
-
-        UrlRequest.Builder requestBuilder = cronetEngine
-                .newUrlRequestBuilder(
-                        urlWithQueryParams, new MyUrlRequestCallback(), executor)
-                .setHttpMethod("POST")
-                .addHeader("Content-Type", "application/json")
-                .setUploadDataProvider(uploadDataProvider, executor);
-
-        UrlRequest request = requestBuilder.build();
-        request.start();
-
-        Log.i("BuildAndSendRequest", "request.start() executed");
+    private Activity getThis() {
+        return this;
     }
 }

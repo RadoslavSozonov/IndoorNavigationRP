@@ -30,8 +30,12 @@ class ModelCreator:
         data, labelsN = firebase.get_from_real_time_database(building)
         if modelName == "cnn":
             cnn_model = CNNModel()
+
+            #These lists will store information about the convolutional and dense layers of the CNN model, respectively.
             conv_pool_layers_info = []
             dense_layers_info = []
+
+            # is a list that contains the labels associated with the data.
             labels = [unit[0] for unit in data]
             map_label_encoding = {}
             value = 0
@@ -66,7 +70,7 @@ class ModelCreator:
 
             encoded_labels = [map_label_encoding[label] for label in labels]
             cnn_model.train("my_first_model", tf.stack(spectrograms), tf.stack(encoded_labels), 20)
+            return cnn_model
         if modelName == "dnn":
-            pass
-
+            return CNNModel()
 

@@ -9,10 +9,8 @@ import numpy as np
 # app = firebase_admin.initialize_app(cred)
 # database = firestore.client()
 
-client = MongoClient('localhost', 27017)
+client = MongoClient('mongodb://localhost:27017')
 db = client["RPServer"]
-
-
 
 def upload_to_real_time_database(label_building, label_room, spectgram):
     # print("Hi")
@@ -21,6 +19,7 @@ def upload_to_real_time_database(label_building, label_room, spectgram):
     for i in range(len(spectgram)):
         # print(type(spectgram[i]))
         dictionary[str(i)] = spectgram[i].tolist()
+
     collection.insert_one({
         "label_building": label_building,
         "label_room": label_room,
@@ -53,5 +52,3 @@ def get_from_real_time_database(label_building):
         #     set_of_labels.add(doc.id)
 
     return data, len(set_of_labels)
-
-
