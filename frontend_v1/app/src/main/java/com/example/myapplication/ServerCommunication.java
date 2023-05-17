@@ -50,9 +50,9 @@ public class ServerCommunication {
                 }
                 return final_list;
             } else return "Server returned response: " + status_code;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return "Server error";
+            return "Server error: " + e.getMessage();
         }
     }
 
@@ -68,6 +68,7 @@ public class ServerCommunication {
         try {
             //String body = "{\"audio\": " + new Gson().toJson(audiolist) + "}";
             String body = new Gson().toJson(room);
+
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
@@ -81,8 +82,35 @@ public class ServerCommunication {
             e.printStackTrace();
             return;
         }
+    }
 
+    public static String recognizeRoom(String ip) {
+        URL url  = null;
+        try {
+            url = new URL("http://" + ip + ":5000/classify");
+        } catch (MalformedURLException e) {
+            return "Server error: " + e.getMessage();
+        }
 
+        try {
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            int status_code = connection.getResponseCode();
+
+            if(status_code == HttpURLConnection.HTTP_OK) {
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+                return in.readLine();
+
+            } else {
+                return "Server error, status code was not 200";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Server error  : " + e.toString();
+        }
     }
 
 }

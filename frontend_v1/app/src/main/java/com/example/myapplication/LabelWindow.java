@@ -54,7 +54,7 @@ import java.util.stream.Stream;
 
 public class LabelWindow extends Activity {
 
-    private final int CHIRP_FREQUENCY = 5000;
+    private final int CHIRP_FREQUENCY = 19500;
 
     // Back is disabled during labelling
     boolean training = false;
@@ -73,7 +73,7 @@ public class LabelWindow extends Activity {
 
         // Get layout components
         TextView room_label = (TextView) findViewById(R.id.label_of_room);
-        TextView building_label = (TextView) findViewById(R.id.label_of_room);
+        TextView building_label = (TextView) findViewById(R.id.label_of_building);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
@@ -204,7 +204,6 @@ public class LabelWindow extends Activity {
                 // app-defined int constant. The callback method gets the
                 // result of the request.
             }
-
         }
 
         AudioRecord audioRecord = new AudioRecord(

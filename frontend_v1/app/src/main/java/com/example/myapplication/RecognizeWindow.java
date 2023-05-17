@@ -10,8 +10,12 @@ import android.widget.Button;
 import android.widget.TextView;
 
 public class RecognizeWindow extends Activity {
+
+    public static RecognizeWindow instance;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        instance = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.popup_recognize);
 
@@ -48,4 +52,6 @@ public class RecognizeWindow extends Activity {
             }
         });
     }
+
+
 }

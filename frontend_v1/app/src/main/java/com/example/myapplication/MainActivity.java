@@ -13,9 +13,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 public class MainActivity extends AppCompatActivity {
     private String rooms = "";
-    private String server_ip = "";
+    private String server_ip = "192.168.56.1";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         TextView list_of_rooms = (TextView) findViewById(R.id.list_of_rooms);
 
         list_of_rooms.setText(rooms);
-
 
         // Make a pop up showing the room label
         Intent server_ip_intent = new Intent(MainActivity.this, SetServerIp.class);
@@ -50,14 +52,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // TODO: get the label of the room
-                String room_label = "room 1";
-
-
-                // Make a pop up showing the room label
                 Intent intent = new Intent(MainActivity.this, RecognizeWindow.class);
                 intent.putExtra("title", "The room label is:");
-                intent.putExtra("text", room_label);
+                //intent.putExtra("text", "nothing yet");
                 startActivity(intent);
+
+                new Thread(new ClassifyRoomExecutor(server_ip, MainActivity.this)).start();
             }
         });
 
@@ -96,4 +96,8 @@ public class MainActivity extends AppCompatActivity {
     public TextView getRoomList() {
         return (TextView) findViewById(R.id.list_of_rooms);
     }
+    public TextView getClassifiedRoom() {
+        return (TextView) RecognizeWindow.instance.findViewById(R.id.popup_text);
+    }
+
 }
