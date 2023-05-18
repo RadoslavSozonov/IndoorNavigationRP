@@ -49,7 +49,7 @@ import java.util.concurrent.Executors;
 
 public class LabelWindow extends Activity {
 
-
+    Activity thisActivity = this;
     // Back is disabled during labelling
     private boolean training = false;
     private CyclicBarrier cyclicBarrier = new CyclicBarrier(1);
@@ -112,6 +112,7 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
 
+
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -143,7 +144,8 @@ public class LabelWindow extends Activity {
                             listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
                             audioRecord.stop();
                             audioRecord.release();
-
+                            System.out.println(server_ip);
+                            ServerCommunicationCronetEngine.addNewPlace(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip, thisActivity);
                             new Thread(() -> {
                                 ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
                             }).start();
@@ -227,84 +229,4 @@ public class LabelWindow extends Activity {
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;
     }
-
-    private void buildAndSendRequest(String placeLabel, List<short[]> listOfRecords, String building) throws IOException, JSONException {
-        Log.i("BuildAndSendRequest", "Sending request");
-        CronetProviderInstaller.installProvider(this);
-        CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
-        CronetEngine cronetEngine = myBuilder.build();
-
-        Executor executor = Executors.newSingleThreadExecutor();
-        String requestUrl = " http://192.168.56.1:5000/add_new_location_point";
-        Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
-        uriBuilder.appendQueryParameter("placeLabel", placeLabel);
-        uriBuilder.appendQueryParameter("buildingLabel", building);
-        String urlWithQueryParams = uriBuilder.build().toString();
-
-        int count = 1;
-        JSONObject jsonObject = new JSONObject();
-        for(short[] array: listOfRecords){
-            jsonObject.put(String.valueOf(count), Arrays.toString(array));
-            count++;
-        }
-        String requestBody = jsonObject.toString();
-
-        UploadDataProvider uploadDataProvider = UploadDataProviders.create(requestBody.getBytes(), 0, requestBody.getBytes().length);
-
-        UrlRequest.Builder requestBuilder = cronetEngine
-                .newUrlRequestBuilder(
-                        urlWithQueryParams, new MyUrlRequestCallback(), executor)
-                .setHttpMethod("POST")
-                .addHeader("Content-Type", "application/json")
-                .setUploadDataProvider(uploadDataProvider, executor);
-
-        UrlRequest request = requestBuilder.build();
-        request.start();
-
-        Log.i("BuildAndSendRequest", "request.start() executed");
-    }
 }
-
-/*
-public void playCodeFromChatGPT4(int freq1, int freq2, float duration) {
-                int SAMPLE_RATE = 44100; // Hz
-                int CHIRP_FREQ_START = freq1; // Hz
-                int CHIRP_FREQ_END = freq2; // Hz
-                float CHIRP_DURATION = duration; // ms
-                int BUFFER_SIZE = (int) (SAMPLE_RATE * CHIRP_DURATION); // samples
-
-                // Create AudioTrack object
-                AudioTrack audioTrack = new AudioTrack.Builder()
-                        .setAudioAttributes(new AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_ALARM)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                .build())
-                        .setAudioFormat(new AudioFormat.Builder()
-                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                                .setSampleRate(SAMPLE_RATE)
-                                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                                .build())
-                        .setBufferSizeInBytes(BUFFER_SIZE * 2)
-                        .build();
-
-                // Create buffer
-                short[] buffer = new short[BUFFER_SIZE];
-
-                // Fill buffer with chirp waveform
-                for (int i = 0; i < BUFFER_SIZE; i++) {
-                    double t = (double) i / SAMPLE_RATE;
-                    double freq = CHIRP_FREQ_START + (CHIRP_FREQ_END - CHIRP_FREQ_START) * t / (CHIRP_DURATION );
-                    // fo + ((f1 - fo) * t)/T
-                    double y = Math.sin(2 * Math.PI * freq * t);
-                    //2*PI*t * (fo + ((f1 - fo) * t)/T)
-                    //2*PI*t*fo + 2*PI*t^2*c -> c = (f1-fo)/T
-                    //2*PI*t*fo + 2*PI*t^2*c
-                    buffer[i] = (short) (y * Short.MAX_VALUE);
-                }
-
-                // Write buffer to AudioTrack and start playback
-                audioTrack.write(buffer, 0, BUFFER_SIZE);
-                audioTrack.play();
-                System.out.println("Sound played Chat");
-            }
- */
