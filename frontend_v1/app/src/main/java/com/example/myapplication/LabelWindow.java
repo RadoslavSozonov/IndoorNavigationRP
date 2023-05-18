@@ -3,27 +3,25 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
-import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-import org.json.JSONArray;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
-import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
-import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
 import com.example.myapplication.RequestCallbacks.MyUrlRequestCallback;
 import com.google.android.gms.net.CronetProviderInstaller;
 
@@ -31,7 +29,6 @@ import org.chromium.net.CronetEngine;
 import org.chromium.net.UploadDataProvider;
 import org.chromium.net.UploadDataProviders;
 import org.chromium.net.UrlRequest;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,19 +41,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 
 
 public class LabelWindow extends Activity {
 
-    private final int CHIRP_FREQUENCY = 19500;
 
     // Back is disabled during labelling
-    boolean training = false;
+    private boolean training = false;
+    private CyclicBarrier cyclicBarrier = new CyclicBarrier(1);
     @Override
     public void onBackPressed() {
         if (!training) {
@@ -70,14 +66,18 @@ public class LabelWindow extends Activity {
         setContentView(R.layout.popup_label);
 
         // Get layout components
-        TextView label = (TextView) findViewById(R.id.label_of_room);
-        TextView labelOfBuilding = (TextView) findViewById(R.id.label_of_building);
+        TextView room_label = (TextView) findViewById(R.id.label_of_room);
+        TextView building_label = (TextView) findViewById(R.id.label_of_building);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
 
+        // get server IP
+        Intent intent = getIntent();
+        String server_ip = intent.getStringExtra("server_ip");
+
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
-        if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP){
+        if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP) {
 
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
                     PackageManager.PERMISSION_GRANTED) {
@@ -99,77 +99,65 @@ public class LabelWindow extends Activity {
             }
         }
 
-        // Start labeling callback
+        Handler handler = new Handler();
         button_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!training) {
+                if (!training) {
                     // get and set rooms label from user input
-                    String label_text = label.getText().toString();
-                    sent_label.setText(label_text);
+                    String label_room_text = room_label.getText().toString();
+                    String label_building_text = building_label.getText().toString();
+                    sent_label.setText(label_building_text + ": " + label_room_text);
+                    progress.setText("In progress");
                     // Disable back button while labeling
                     training = true;
-                    // TODO: chirp and receive 500 echos, then send them to server
-                    int repeatChirp = 502;
-//                  
-                    ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
-                  
-                    AudioRecord audioRecord = createAudioRecord();
-                    System.out.println(audioRecord.getState());
-                    CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord, repeatChirp);
-//                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
-                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
-                    List<short[]> listOfRecords = new ArrayList<>();
-                    TimerTask task = new TimerTask() {
-                        int count = 0;
+
+                    new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            chirpEmitter.playOnce();
+                            AudioRecord audioRecord = createAudioRecord();
+                            int buffer_size = (int) (Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP);
+                            short[] buffer = new short[buffer_size];
+
+                            List<short[]> listOfRecords = new ArrayList<>();
+
+                            audioRecord.startRecording();
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        cyclicBarrier.await();
+
+                                        audioRecord.read(buffer, 0, buffer_size);
+                                    } catch (BrokenBarrierException e) {
+                                        throw new RuntimeException(e);
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+
+                                }
+                            }).start();
+
+                            ChirpEmitterBisccitAttempt.playSound(Globals.CHIRP_FREQUENCY, Globals.REPEAT_CHIRP, cyclicBarrier);
+
+                            listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
+                            audioRecord.stop();
+                            audioRecord.release();
+
+                            new Thread(() -> {
+                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
+                            }).start();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progress.setText("Done!");
+                                }
+                            });
+                            training = false;
                         }
-                    };
+                    }).start();
 
-                    Timer timer = new Timer("Timer");
-                    audioRecord.startRecording();
-                    timer.scheduleAtFixedRate(task, 1L, 100L);
-                    threadCapture.start();
-
-                    try {
-                        Thread.sleep(100L*repeatChirp);
-                        captureAcousticEcho.stopCapture();
-                        timer.cancel();
-                        audioRecord.stop();
-                        audioRecord.release();
-                        captureAcousticEcho.stopThread();
-                        listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
-
-                        audioRecord = null;
-
-                        buildAndSendRequest(
-                                String.valueOf(label.getText()),
-                                listOfRecords
-                                        .stream()
-                                        .filter(x -> sumUp(x) > 0)
-                                        .collect(Collectors.toList()),
-                                String.valueOf(labelOfBuilding.getText())
-                        );
-
-
-                    } catch (InterruptedException | JSONException | IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    chirpEmitter.destroy();
-                    training = false;
                 }
-            }
-
-            public int sumUp(short[] array){
-                for (short value : array) {
-                    if (value > 0) {
-                        return 1;
-                    }
-                }
-                return -1;
             }
         });
 
@@ -193,7 +181,7 @@ public class LabelWindow extends Activity {
         button_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!training) {
+                if (!training) {
                     finish();
                 }
             }
@@ -234,7 +222,7 @@ public class LabelWindow extends Activity {
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100*0.1*200) // sampleRate*duration*2*repeats
+                (int) (44100 * 0.1 * 2 * 100) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;
@@ -276,3 +264,47 @@ public class LabelWindow extends Activity {
         Log.i("BuildAndSendRequest", "request.start() executed");
     }
 }
+
+/*
+public void playCodeFromChatGPT4(int freq1, int freq2, float duration) {
+                int SAMPLE_RATE = 44100; // Hz
+                int CHIRP_FREQ_START = freq1; // Hz
+                int CHIRP_FREQ_END = freq2; // Hz
+                float CHIRP_DURATION = duration; // ms
+                int BUFFER_SIZE = (int) (SAMPLE_RATE * CHIRP_DURATION); // samples
+
+                // Create AudioTrack object
+                AudioTrack audioTrack = new AudioTrack.Builder()
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build())
+                        .setAudioFormat(new AudioFormat.Builder()
+                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                                .setSampleRate(SAMPLE_RATE)
+                                .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                                .build())
+                        .setBufferSizeInBytes(BUFFER_SIZE * 2)
+                        .build();
+
+                // Create buffer
+                short[] buffer = new short[BUFFER_SIZE];
+
+                // Fill buffer with chirp waveform
+                for (int i = 0; i < BUFFER_SIZE; i++) {
+                    double t = (double) i / SAMPLE_RATE;
+                    double freq = CHIRP_FREQ_START + (CHIRP_FREQ_END - CHIRP_FREQ_START) * t / (CHIRP_DURATION );
+                    // fo + ((f1 - fo) * t)/T
+                    double y = Math.sin(2 * Math.PI * freq * t);
+                    //2*PI*t * (fo + ((f1 - fo) * t)/T)
+                    //2*PI*t*fo + 2*PI*t^2*c -> c = (f1-fo)/T
+                    //2*PI*t*fo + 2*PI*t^2*c
+                    buffer[i] = (short) (y * Short.MAX_VALUE);
+                }
+
+                // Write buffer to AudioTrack and start playback
+                audioTrack.write(buffer, 0, BUFFER_SIZE);
+                audioTrack.play();
+                System.out.println("Sound played Chat");
+            }
+ */
