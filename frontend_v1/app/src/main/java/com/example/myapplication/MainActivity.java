@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
     private String rooms = "";
 
     private boolean useStaticIp = true;
-    private String server_ip = "192.168.1.14";
+    private String server_ip = "145.94.145.13";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,7 +30,6 @@ public class MainActivity extends AppCompatActivity {
         TextView list_of_rooms = (TextView) findViewById(R.id.list_of_rooms);
 
         list_of_rooms.setText(rooms);
-
 
         // Make a pop up showing the room label
         Intent server_ip_intent = new Intent(MainActivity.this, SetServerIp.class);
