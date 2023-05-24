@@ -12,13 +12,17 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import time
+import os
+
+from datetime import datetime
+
 
 
 APP = Flask(__name__)
 
-cred = credentials.Certificate('key.json')
-app = firebase_admin.initialize_app(cred)
-db = firestore.client()
+# cred = credentials.Certificate('key.json')
+# app = firebase_admin.initialize_app(cred)
+# db = firestore.client()
 
 
 interval = 0.1
@@ -80,9 +84,8 @@ def create_spectrogram(array, filename):
     rgb = cv2.imread(filename)
     rgb = rgb[59:428, 80:579]
     rgb = cv2.resize(rgb, (32, 5))
-
-
-    cv2.imwrite(filename + ".png", rgb)
+    not_rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite(filename, not_rgb)
 
     return rgb
 
@@ -107,19 +110,25 @@ def add_room():
     room_label = room_data['room_label']
     building_label = room_data['building_label']
     room_audio = room_data['audio']
-    
-    
-    update_time, doc_ref = db.collection(building_label).add({})
-    data = {
-        u'building': building_label,
-        u'room': room_label,
-        u'audio': "Currently stored locally",
-        u'uuid':doc_ref.id
-    }
 
-    doc_ref.update(data)
+    today = datetime.now()
+    classify_date = today.strftime("%b-%d-%Y-%H-%M-%S")
+    
+    # update_time, doc_ref = db.collection(building_label).add({})
+    # data = {
+    #     u'building': building_label,
+    #     u'room': room_label,
+    #     u'audio': "Currently stored locally",
+    #     u'uuid':doc_ref.id
+    # }
+
+    # doc_ref.update(data)
 
     np_arr = np.asarray(room_audio, dtype=np.int16)
+    training_set_directory = './images/'+ str(building_label) + '/' + str(room_label)
+    if not os.path.exists(training_set_directory):
+        # Create a new directory because it does not exist
+        os.makedirs(training_set_directory)
 
     # Cut out all the bad chirps
     np_arr = np_arr[0, int(chirp_first_error * interval_samples): int((chirp_amount - chirp_last_error) * interval_samples)]
@@ -131,7 +140,7 @@ def add_room():
         # cuts out the ending chirp
         end_rate = int((i + 1) * interval_samples + first_chirp_offset - chirp_radius_samples  )
         sliced = np_arr[start_rate : end_rate]
-        create_spectrogram(sliced, './images/tarck' + str(i) + '.jpg')
+        create_spectrogram(sliced, training_set_directory+ '/' + classify_date + '-' + str(i) + '.png')
     
 
     # write(doc_ref.id + ".wav", sample_rate, np_arr.astype(np.int16))
