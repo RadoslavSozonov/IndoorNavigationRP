@@ -27,7 +27,7 @@ APP = Flask(__name__)
 
 interval = 0.1
 sample_rate = 44100
-chirp_amount = 20
+chirp_amount = 200
 # amount of chirps that are ignored, since some of the last chirps dont work
 chirp_last_error = 2
 chirp_first_error = 1

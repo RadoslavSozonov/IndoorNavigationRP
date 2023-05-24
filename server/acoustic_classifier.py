@@ -62,6 +62,7 @@ class AcousticClassifier:
         
         images = []
         labels = []
+        int_to_label = []
         count = 0
         for building_label in next(os.walk('./images'))[1]:
             for room_label in next(os.walk('./images/' + building_label))[1]:
@@ -75,6 +76,7 @@ class AcousticClassifier:
                     full_label = building_label + '_' + room_label
                     images.append(grey)
                     labels.append(count)
+                    int_to_label.append((count, full_label))
 
                 count = count + 1
         images = np.asarray(images)
@@ -86,7 +88,7 @@ class AcousticClassifier:
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-        history = self.model.fit(images_train, labels_train, epochs=100, 
+        history = self.model.fit(images_train, labels_train, epochs=200, 
                     validation_data=(images_test, labels_test))
 
         
