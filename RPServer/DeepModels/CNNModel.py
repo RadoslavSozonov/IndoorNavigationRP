@@ -39,7 +39,8 @@ class CNNModel(CNNSingelton):
             dense_layers_info,
             input_shape=(5, 32, 1),
             optimizer='adam',
-            metrics=None
+            metrics=None,
+            labels_num = 2
     ):
 
         if metrics is None:
@@ -62,28 +63,25 @@ class CNNModel(CNNSingelton):
                         padding="same"
                     )
                 )
-                model.add(self.layers.MaxPooling2D(
-                    (
-                        pool_layer_filter_size,
-                        pool_layer_filter_size,
-                    ),
-                    strides=(2, 2),
-                    padding="valid"
-                ))
-                continue
 
-            model.add(
-                self.layers.Conv2D(
-                    conv_filters,
-                    (conv_layer_filter_size, conv_layer_filter_size),
-                    activation=conv_activation_func
+            else:
+                model.add(
+                    self.layers.Conv2D(
+                        conv_filters,
+                        (conv_layer_filter_size, conv_layer_filter_size),
+                        activation=conv_activation_func,
+                        strides=(1, 1),
+                        padding="same"
+                    )
                 )
-            )
+
             model.add(self.layers.MaxPooling2D(
                 (
                     pool_layer_filter_size,
                     pool_layer_filter_size
-                )
+                ),
+                strides=(2, 2),
+                padding="valid"
             ))
 
         model.add(self.layers.Flatten())
@@ -92,20 +90,21 @@ class CNNModel(CNNSingelton):
             units = dense_layer["units"]
             activation = dense_layer["activation_func"]
             model.add(self.layers.Dense(units, activation=activation, ))
-        # model.add(self.layers.Dense(10))
+
+        model.add(self.layers.Dense(units=labels_num))
 
         model.compile(optimizer=optimizer,
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                       metrics=metrics)
         self.cnn_models[name_of_model] = model
 
-    def train(self, name_of_model, training_set, training_labels, epochs, validation_set=None, validation_labels=None):
-        print(self.cnn_models[name_of_model])
+    def train(self, name_of_model, training_set, training_labels, epochs, validation_set, validation_labels):
         history = self.cnn_models[name_of_model].fit(
             training_set,
             training_labels,
             epochs=epochs,
-            validation_data=(training_set, training_labels)
+            validation_data=(validation_set, validation_labels),
+            shuffle=True
         )
         return history, self.cnn_models[name_of_model]
 

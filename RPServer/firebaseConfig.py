@@ -42,15 +42,9 @@ def get_from_real_time_database(label_building):
         list = []
         for key in entity["data"]:
             list.append(entity["data"][key])
+        # if entity["label_room"] == "L18D" or entity["label_room"] == "L18E":
         data.append((entity["label_room"], list))
         set_of_labels.add(entity["label_room"])
-        # for idUuid in doc.to_dict():
-        #     list1 = []
-        #     spectrogram = doc.to_dict()[idUuid]
-        #     for key in spectrogram:
-        #         list1.append(spectrogram[key])
-        #     data.append((doc.id, np.asarray(list1)))
-        #     set_of_labels.add(doc.id)
 
     return data, len(set_of_labels)
 

@@ -10,19 +10,23 @@ class DNNModel(DNNSingelton):
         self.layers = tf.keras.layers
         self.models = tf.keras.models
 
-    def create_new_model(self, name_of_model, input_shape, dense_layers_info, optimizer, metrics):
+    def create_new_model(
+            self,
+            name_of_model,
+            dense_layers_info,
+            input_shape=(5, 32, 1),
+            optimizer='adam',
+            metrics=None
+    ):
 
         model = self.models.Sequential()
 
         for dense_layer in dense_layers_info:
             units = dense_layer["units"]
             activation = dense_layer["activation_func"]
-
             model.add(self.layers.Dense(units, activation=activation))
-        # model.add(self.layers.Dense(10))
 
-        if(True):
-            print(model.summary())
+        # model.add(self.layers.Dense(units, activation=activation))
 
         model.compile(optimizer=optimizer,
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
