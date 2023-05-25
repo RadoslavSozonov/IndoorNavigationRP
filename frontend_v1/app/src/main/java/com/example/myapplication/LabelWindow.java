@@ -35,6 +35,8 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -141,14 +143,13 @@ public class LabelWindow extends Activity {
 
                             ChirpEmitterBisccitAttempt.playSound(Globals.CHIRP_FREQUENCY, Globals.REPEAT_CHIRP, cyclicBarrier);
 
-                            listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
+                            listOfRecords.add(buffer);
                             audioRecord.stop();
                             audioRecord.release();
-                            System.out.println(server_ip);
-                            ServerCommunicationCronetEngine.addNewPlace(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip, thisActivity);
-                            new Thread(() -> {
-                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
-                            }).start();
+                            ServerCommunicationCronetEngine.addNewPlace(listOfRecords, label_building_text.trim(), label_room_text.trim(), server_ip, thisActivity);
+//                            new Thread(() -> {
+//                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
+//                            }).start();
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -224,7 +225,7 @@ public class LabelWindow extends Activity {
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100 * 0.1 * 2 * 100) // sampleRate*duration*2*repeats
+                (int) (44100 * 0.1 * 2 * 10) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;

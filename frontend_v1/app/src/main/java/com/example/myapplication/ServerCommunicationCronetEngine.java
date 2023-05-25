@@ -15,6 +15,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -22,10 +24,10 @@ import java.util.concurrent.Executors;
 
 public class ServerCommunicationCronetEngine {
 
-    public static void addNewPlace(Room room, String ip, Activity activity) {
+    public static void addNewPlace(List<short[]> audio, String buildingLabel, String roomLabel, String ip, Activity activity) {
         UrlRequest request = null;
         try {
-            request = buildRequest(room, ip, activity);
+            request = buildRequest(audio, buildingLabel, roomLabel, ip, activity);
             request.start();
             Log.i("BuildAndSendRequest", "request.start() executed");
         } catch (IOException e) {
@@ -35,7 +37,7 @@ public class ServerCommunicationCronetEngine {
         }
     }
 
-    private static UrlRequest buildRequest(Room room, String ip, Activity activity) throws IOException, JSONException {
+    private static UrlRequest buildRequest(List<short[]> audio, String buildingLabel, String roomLabel, String ip, Activity activity) throws IOException, JSONException {
         Log.i("BuildAndSendRequest", "Sending request");
         CronetProviderInstaller.installProvider(activity);
         CronetEngine.Builder myBuilder = new CronetEngine.Builder(activity);
@@ -44,13 +46,14 @@ public class ServerCommunicationCronetEngine {
         Executor executor = Executors.newSingleThreadExecutor();
         String requestUrl = "http://"+ip+":5000/add_new_location_point";
         Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
-        uriBuilder.appendQueryParameter("placeLabel", room.room_label);
-        uriBuilder.appendQueryParameter("buildingLabel", room.building_label);
+        uriBuilder.appendQueryParameter("placeLabel", roomLabel);
+        uriBuilder.appendQueryParameter("buildingLabel", buildingLabel);
         String urlWithQueryParams = uriBuilder.build().toString();
 
         int count = 1;
         JSONObject jsonObject = new JSONObject();
-        for(short[] array: room.audio){
+        for(short[] array: audio){
+            System.out.println(Arrays.toString(array));
             jsonObject.put(String.valueOf(count), Arrays.toString(array));
             count++;
         }
