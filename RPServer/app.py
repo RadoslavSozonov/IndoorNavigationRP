@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 interval = 0.1
 sample_rate = 44100
-chirp_amount = 204
+chirp_amount = 24
 # amount of chirps that are ignored, since some of the last chirps dont work
 chirp_error_amount = 2
 # chirp_sample_offset = 0
@@ -110,15 +110,15 @@ def add_new_location_point():
         big_array = dictionary[key][int(chirp_error_amount * interval_rate):]
         np_arr = np.asarray(big_array, dtype=np.int16)
 
-        while True:
-            print(i, interval_rate, chirp_sample_offset)
-            start_rate = int(i * interval_rate)
-            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-
-            chirp_sample_offset = spectgramCreator.get_offset(sliced)
-            if chirp_sample_offset is not None and chirp_sample_offset > 0:
-                break
-            i += 1
+        # while True:
+        #     print(i, interval_rate, chirp_sample_offset)
+        #     start_rate = int(i * interval_rate)
+        #     sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+        #
+        #     chirp_sample_offset = spectgramCreator.get_offset(sliced)
+        #     if chirp_sample_offset is not None and chirp_sample_offset > 0:
+        #         break
+        #     i += 1
 
         for i in range(int(len(big_array) / interval_rate) - chirp_error_amount):
             start_rate = int(i * interval_rate + chirp_sample_offset)

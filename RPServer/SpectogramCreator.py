@@ -28,9 +28,9 @@ class SpectogramCreator:
         spectrum, freqs, t, im = specgram(x=d1_array[110:], Fs=44100)
         freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
         spectrum = spectrum[freq_indices, :]
-        if i == 5:
-            date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
-            plt.savefig("photos2/image" + date+"_"+label_building+"_"+label_room + ".png")
+        # if i == 5:
+        date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
+        plt.savefig("photos2/image" + int(i) + ".png")
         return spectrum
 
     def createSpectogram(self, label_room, d1_array, label_building, i):
@@ -39,18 +39,18 @@ class SpectogramCreator:
             #print(multiplier)
             # print(spectrum[2])
             # spectrum = (spectrum/max_number)*255
-            firebase.upload_to_real_time_database(label_building, label_room, spectrum)
+            # firebase.upload_to_real_time_database(label_building, label_room, spectrum)
             #print(spectrum)
             # print(spectrum)
             # f, t, sxx = spectrogram(np.array(array), window=windows.hann(M=256), noverlap=128, fs=20000)
             # print(i, spectrum.shape)
-            if i == 5:
-                date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
-                cv2.imwrite("photos2/"+date+"_"+label_building+"_"+label_room+".png", spectrum)
+            # if i == 5:
+            date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
+            cv2.imwrite("photos2/"+int(i)+".png", spectrum)
 
-                image = Image.open("photos2/"+date+"_"+label_building+"_"+label_room+".png")
-                new_image = image.resize((320, 50))
-                new_image.save("photos2/"+date+"_"+label_building+"_"+label_room+".png")
+            image = Image.open("photos2/"+int(i)+".png")
+            new_image = image.resize((320, 50))
+            new_image.save("photos2/"+int(i)+".png")
             # # plt.savefig("photos2/image"+str(i)+".png")
             # image = cv2.imread("photos2/image"+str(1000+i)+".png")
             #

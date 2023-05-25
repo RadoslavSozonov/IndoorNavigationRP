@@ -147,9 +147,9 @@ public class LabelWindow extends Activity {
                             audioRecord.stop();
                             audioRecord.release();
                             ServerCommunicationCronetEngine.addNewPlace(listOfRecords, label_building_text.trim(), label_room_text.trim(), server_ip, thisActivity);
-//                            new Thread(() -> {
-//                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
-//                            }).start();
+                            new Thread(() -> {
+                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
+                            }).start();
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
