@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.RequestCallbacks.RecordingCallback;
+import com.example.myapplication.Util;
 
 import org.json.JSONException;
 
@@ -56,7 +57,7 @@ public class DataRecorder {
         };
 
         Timer timer = new Timer("Timer");
-        audioRecord.startRecording();
+        //audioRecord.startRecording();
         timer.scheduleAtFixedRate(task, 1L, 100L);
         threadCapture.start();
 
@@ -67,15 +68,20 @@ public class DataRecorder {
             audioRecord.stop();
             audioRecord.release();
             captureAcousticEcho.stopThread();
-            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
 
-            Log.i("SHORTS LENGTH", "" + listOfRecords.get(0).length);
+            Log.i("BUFFER", "" + Util.printArray(captureAcousticEcho.buffer, 30000, 31000));
 
-            callback.run(activity, listOfRecords);
+            //listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
+
+            //Log.i("SHORTS LENGTH", "" + listOfRecords.get(0).length);
+
+            //callback.run(activity, listOfRecords);
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+
 
         chirpEmitter.destroy();
     }
@@ -112,8 +118,8 @@ public class DataRecorder {
                 MediaRecorder.AudioSource.MIC,
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100*0.1*200) // sampleRate*duration*2*repeats
+                AudioFormat.ENCODING_PCM_FLOAT,
+                (int) (44100) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;

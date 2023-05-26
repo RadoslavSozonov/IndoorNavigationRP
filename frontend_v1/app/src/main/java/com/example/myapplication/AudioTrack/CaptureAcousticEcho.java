@@ -7,11 +7,13 @@ import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.LabelWindow;
+import com.example.myapplication.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +25,7 @@ public class CaptureAcousticEcho implements Runnable {
     private AudioRecord audioRecord;
     private boolean stopThread = false;
 
-    public short[] buffer = new short[1];
+    public float[] buffer = new float[1];
 
     public boolean onceStarted = false;
 
@@ -33,9 +35,9 @@ public class CaptureAcousticEcho implements Runnable {
     public CaptureAcousticEcho(AudioRecord audioRecord, int repeatChirp) {
         this.audioRecord = audioRecord;
         this.repeatChirp = repeatChirp;
-        int bufferSize = (int) (44100*0.1*(this.repeatChirp));
+        int bufferSize = (int) (44100);
         this.bufferSize = bufferSize;
-        this.buffer= new short[bufferSize];// should be 44100*0.1
+        this.buffer= new float[bufferSize];// should be 44100*0.1
     }
 
     public void stopCapture(){
@@ -59,17 +61,11 @@ public class CaptureAcousticEcho implements Runnable {
     @Override
     public void run() {
         long start = System.currentTimeMillis();
-        audioRecord.read(this.buffer, 0, bufferSize);
-        System.out.println(System.currentTimeMillis()-start);
-//        while(!this.stopThread){
-//            int bufferSize = (int) (44100*0.1);
-//            this.buffer= new short[bufferSize];// should be 44100*0.1
-//            int records = 0;
-//            while (this.capture){
-//                records+= audioRecord.read(this.buffer, 0, bufferSize);
-//                System.out.println(records);
-//            }
-//        }
+        audioRecord.startRecording();
+        int res = audioRecord.read(this.buffer, 0, bufferSize, AudioRecord.READ_BLOCKING);
+        Log.d("record result", "" +  res);
+        Log.i("recording duration", "" + (System.currentTimeMillis()-start));
+        //Log.i("BUFFER", "" + Util.printArray(buffer, 1000, 1100));
 
     }
 }

@@ -112,7 +112,7 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
 
-                    DataRecorder dataRecorder = new DataRecorder(52, getThis(), new LabelCallback(String.valueOf(label.getText()), String.valueOf(labelOfBuilding.getText())));
+                    DataRecorder dataRecorder = new DataRecorder(10, getThis(), new LabelCallback(String.valueOf(label.getText()), String.valueOf(labelOfBuilding.getText())));
 
                     dataRecorder.recordData();
 

@@ -34,19 +34,38 @@ def add_new_location_point():
     placeLabel = request.args.get("placeLabel")
     buildingLabel = request.args.get("buildingLabel")
 
-    spectgramCreator = SpectogramCreator()
     i = 0
     for key in dictionary:
         i+=1
         dictionary[key] = [int(i) for i in dictionary[key].strip('][').split(', ')]
 
-    for key in dictionary:
-        print("length: " + str(len(dictionary[key])))
-        big_array = dictionary[key]
-        for i in range(int(len(big_array)/4410)-1):
-            if i == 0:
-                continue
-            spectgramCreator.createSpectogram(placeLabel, [big_array[(i)*4410:(i+1)*4410]], buildingLabel, i+1)
+    intlist = dictionary['1']
+
+    # print(dictionary)
+    # print(intlist[1000:1100])
+    
+    # filter intlist
+    intlist = np.convolve(intlist, np.ones(10) / 10, mode='valid')
+
+    duration = len(intlist)  # Duration of the audio
+    x = np.linspace(0, duration, len(intlist))
+
+    plt.plot(intlist)
+    plt.xlabel("sample")
+    plt.ylabel("amplitude")
+    plt.legend()
+    plt.title("barSpectogram")
+    plt.savefig('plot_building_' + buildingLabel + '_room_'+placeLabel+'_.png')
+
+    # spectgramCreator = SpectogramCreator()
+
+    # for key in dictionary:
+    #     print("length: " + str(len(dictionary[key])))
+    #     big_array = dictionary[key]
+    #     for i in range(int(len(big_array)/4410)-1):
+    #         if i == 0:
+    #             continue
+    #         spectgramCreator.createSpectogram(placeLabel, [big_array[(i)*4410:(i+1)*4410]], buildingLabel, i+1)
     return "Success"
 
 @APP.route('/train_model_for_building')

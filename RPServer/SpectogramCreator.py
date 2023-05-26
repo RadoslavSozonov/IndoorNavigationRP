@@ -18,7 +18,7 @@ class SpectogramCreator:
 
             # print("SHAPE: " + str(spectrum.shape))
 
-            firebase.upload_to_real_time_database(label_building, label_room, spectrum)
+            # firebase.upload_to_real_time_database(label_building, label_room, spectrum)
 
             filename = "saved\\images\\spectrum_building_" + label_building + "_room_" + label_room + "_" +str(i)+".png"
 
