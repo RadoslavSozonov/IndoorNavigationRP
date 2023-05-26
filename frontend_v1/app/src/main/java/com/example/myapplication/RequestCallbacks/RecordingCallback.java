@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface RecordingCallback {
 
-    public void run(Activity activity, List<short[]> data);
+    public void run(Activity activity, List<float[]> data);
 
 }

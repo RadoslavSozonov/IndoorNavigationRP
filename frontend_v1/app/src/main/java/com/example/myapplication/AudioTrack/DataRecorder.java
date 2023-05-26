@@ -7,10 +7,12 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
+import android.widget.TextView;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.myapplication.R;
 import com.example.myapplication.RequestCallbacks.RecordingCallback;
 import com.example.myapplication.Util;
 
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class DataRecorder {
 
-    private final int CHIRP_FREQUENCY = 19500;
+    private final int CHIRP_FREQUENCY = 4000;
     private int chirpRepeat;
 
     private Activity activity;
@@ -40,14 +42,14 @@ public class DataRecorder {
     }
 
     public void recordData() {
-        ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY);
+        ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY, chirpRepeat);
 
         AudioRecord audioRecord = createAudioRecord();
         System.out.println(audioRecord.getState());
         CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord, this.chirpRepeat);
 //                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
         Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
-        List<short[]> listOfRecords = new ArrayList<>();
+        List<float[]> listOfRecords = new ArrayList<>();
         TimerTask task = new TimerTask() {
             int count = 0;
             @Override
@@ -71,17 +73,19 @@ public class DataRecorder {
 
             Log.i("BUFFER", "" + Util.printArray(captureAcousticEcho.buffer, 30000, 31000));
 
-            //listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
+            listOfRecords.add(Arrays.copyOf(captureAcousticEcho.buffer, captureAcousticEcho.buffer.length));
 
-            //Log.i("SHORTS LENGTH", "" + listOfRecords.get(0).length);
+//            TextView label = (TextView) activity.findViewById(R.id.label_of_room);
+//            label.setText(Util.printArray(captureAcousticEcho.buffer, 30000, 30100));
 
-            //callback.run(activity, listOfRecords);
+
+            Log.i("SHORTS LENGTH", "" + listOfRecords.get(0).length);
+
+            callback.run(activity, listOfRecords);
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-
 
         chirpEmitter.destroy();
     }
@@ -119,7 +123,7 @@ public class DataRecorder {
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_FLOAT,
-                (int) (44100) // sampleRate*duration*2*repeats
+                (int) (44100 * 0.1 * chirpRepeat) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;

@@ -35,7 +35,7 @@ public class CaptureAcousticEcho implements Runnable {
     public CaptureAcousticEcho(AudioRecord audioRecord, int repeatChirp) {
         this.audioRecord = audioRecord;
         this.repeatChirp = repeatChirp;
-        int bufferSize = (int) (44100);
+        int bufferSize = (int) (44100 * 0.1 * repeatChirp);
         this.bufferSize = bufferSize;
         this.buffer= new float[bufferSize];// should be 44100*0.1
     }

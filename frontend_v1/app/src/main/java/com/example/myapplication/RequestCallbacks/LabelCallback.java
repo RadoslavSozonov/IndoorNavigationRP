@@ -13,6 +13,7 @@ import org.chromium.net.UrlRequest;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -29,7 +30,7 @@ public class LabelCallback implements RecordingCallback {
     }
 
     @Override
-    public void run(Activity activity, List<short[]> data) {
+    public void run(Activity activity, List<float[]> data) {
         Log.i("BuildAndSendRequest", "Sending request");
         CronetProviderInstaller.installProvider(activity);
         CronetEngine.Builder myBuilder = new CronetEngine.Builder(activity);
@@ -44,7 +45,7 @@ public class LabelCallback implements RecordingCallback {
 
         int count = 1;
         JSONObject jsonObject = new JSONObject();
-        for(short[] array: data){
+        for(float[] array: data){
             try {
                 jsonObject.put(String.valueOf(count), Arrays.toString(array));
             } catch (JSONException e) {

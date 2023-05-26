@@ -11,6 +11,8 @@ import json
 import tensorflow as tf
 mtplt.use('Agg')
 
+import wave
+
 from ModelCreator import ModelCreator
 from SpectogramCreator import SpectogramCreator
 from DeepModels.CNNModel import CNNModel
@@ -34,10 +36,8 @@ def add_new_location_point():
     placeLabel = request.args.get("placeLabel")
     buildingLabel = request.args.get("buildingLabel")
 
-    i = 0
     for key in dictionary:
-        i+=1
-        dictionary[key] = [int(i) for i in dictionary[key].strip('][').split(', ')]
+        dictionary[key] = [float(i) for i in dictionary[key].strip('][').split(', ')]
 
     intlist = dictionary['1']
 
@@ -45,16 +45,17 @@ def add_new_location_point():
     # print(intlist[1000:1100])
     
     # filter intlist
-    intlist = np.convolve(intlist, np.ones(10) / 10, mode='valid')
+    #intlist = np.convolve(intlist, np.ones(10) / 10, mode='valid')
 
-    duration = len(intlist)  # Duration of the audio
+    duration = len(intlist)/44100  # Duration of the audio
     x = np.linspace(0, duration, len(intlist))
 
-    plt.plot(intlist)
+    plt.figure(figsize=(25, 5))
+    plt.plot(x, intlist)
     plt.xlabel("sample")
     plt.ylabel("amplitude")
-    plt.legend()
-    plt.title("barSpectogram")
+    plt.xlim(0, duration)
+    plt.title("Recording")
     plt.savefig('plot_building_' + buildingLabel + '_room_'+placeLabel+'_.png')
 
     # spectgramCreator = SpectogramCreator()

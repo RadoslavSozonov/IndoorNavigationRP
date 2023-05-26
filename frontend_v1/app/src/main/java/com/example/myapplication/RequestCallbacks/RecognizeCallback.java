@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 public class RecognizeCallback implements RecordingCallback {
 
     @Override
-    public void run(Activity activity, List<short[]> recordingData) {
+    public void run(Activity activity, List<float[]> recordingData) {
         Log.i("ClassifySendRequest", "Sending request");
         CronetProviderInstaller.installProvider(activity);
         CronetEngine.Builder myBuilder = new CronetEngine.Builder(activity);
