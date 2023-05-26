@@ -9,12 +9,14 @@ public class ChirpEmitterBisccitAttempt {
 
     private AudioTrack audioTrack;
 
-    private static int sampleRate = 44100;
-    private static double interval = 0.1;
-    private static double duration = 0.002;
+    private short[] buffer;
 
-    public ChirpEmitterBisccitAttempt(double frequency, int repeatChirp) {
+    private int repeatChirp;
+
+    public static void playSound(double frequency, int repeatChirp) {
+        int sampleRate = 44100;
         int bufferSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+
 
         AudioTrack audioTrack = new AudioTrack.Builder()
                 .setAudioAttributes(new AudioAttributes.Builder()
@@ -30,9 +32,13 @@ public class ChirpEmitterBisccitAttempt {
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build();
 
+
+        double duration = 0.02;
+        double interval = 0.1;
+
         double break_length = interval - duration;
         double amplitude = 1.0; // between -1.0 and 1.0
-        int numSamples = 1 + (int)(duration * sampleRate);
+        int numSamples = (int)(duration * sampleRate);
 
         short[] buffer = new short[numSamples];
         double angularFrequency = 2.0 * Math.PI * frequency;
@@ -47,28 +53,18 @@ public class ChirpEmitterBisccitAttempt {
         int ite = 0;
 
         while(ite < audio.length) {
-            // fill in the chirp
             for(int i = 0; i < buffer.length; i++) {
                 audio[ite] = buffer[i];
                 ite++;
             }
-            // fill in silence
             for(int i = 0; i < (int) (break_length * sampleRate); i++) {
                 audio[ite] = (short) 0;
                 ite++;
             }
         }
 
+        audioTrack.play();
         audioTrack.write(audio, 0, audio.length);
-    }
-
-    public void playOnce() {
-        this.audioTrack.play();
-        this.audioTrack.stop();
-        this.audioTrack.reloadStaticData();
-    }
-
-    public void destroy() {
         audioTrack.stop();
         audioTrack.release();
     }

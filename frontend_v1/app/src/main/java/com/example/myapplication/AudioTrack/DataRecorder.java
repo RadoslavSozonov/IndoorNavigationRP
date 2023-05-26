@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class DataRecorder {
 
-    private final int CHIRP_FREQUENCY = 4000;
+    private final int CHIRP_FREQUENCY = 19999;
     private int chirpRepeat;
 
     private Activity activity;
@@ -42,7 +42,7 @@ public class DataRecorder {
     }
 
     public void recordData() {
-        ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY, chirpRepeat);
+        //ChirpEmitterBisccitAttempt chirpEmitter = new ChirpEmitterBisccitAttempt(CHIRP_FREQUENCY, chirpRepeat);
 
         AudioRecord audioRecord = createAudioRecord();
         System.out.println(audioRecord.getState());
@@ -54,7 +54,7 @@ public class DataRecorder {
             int count = 0;
             @Override
             public void run() {
-                chirpEmitter.playOnce();
+                ChirpEmitterBisccitAttempt.playSound(CHIRP_FREQUENCY, chirpRepeat);
             }
         };
 
@@ -87,7 +87,7 @@ public class DataRecorder {
             throw new RuntimeException(e);
         }
 
-        chirpEmitter.destroy();
+        //chirpEmitter.destroy();
     }
 
     private AudioRecord createAudioRecord() {

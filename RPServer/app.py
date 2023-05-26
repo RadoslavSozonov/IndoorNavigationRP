@@ -45,7 +45,7 @@ def add_new_location_point():
     # print(intlist[1000:1100])
     
     # filter intlist
-    #intlist = np.convolve(intlist, np.ones(10) / 10, mode='valid')
+    # intlist = np.convolve(intlist, np.ones(2) / 2, mode='valid')
 
     duration = len(intlist)/44100  # Duration of the audio
     x = np.linspace(0, duration, len(intlist))
