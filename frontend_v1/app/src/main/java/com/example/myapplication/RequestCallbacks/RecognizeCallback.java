@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.myapplication.Globals;
 import com.google.android.gms.net.CronetProviderInstaller;
 
 import org.chromium.net.CronetEngine;
@@ -28,7 +29,7 @@ public class RecognizeCallback implements RecordingCallback {
         CronetEngine cronetEngine = myBuilder.build();
 
         Executor executor = Executors.newSingleThreadExecutor();
-        String requestUrl = " http://192.168.56.1:5000/classify";
+        String requestUrl = " http://"+ Globals.IP+":"+Globals.PORT+"/classify";
         Uri.Builder uriBuilder = Uri.parse(requestUrl).buildUpon();
         String urlWithQueryParams = uriBuilder.build().toString();
 

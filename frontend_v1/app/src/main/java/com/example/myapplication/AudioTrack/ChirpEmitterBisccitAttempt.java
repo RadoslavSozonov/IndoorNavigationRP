@@ -5,6 +5,8 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 
+import com.example.myapplication.Globals;
+
 public class ChirpEmitterBisccitAttempt {
 
     private AudioTrack audioTrack;
@@ -13,11 +15,10 @@ public class ChirpEmitterBisccitAttempt {
 
     private int repeatChirp;
 
-    public static void playSound(double frequency, int repeatChirp) {
-        int sampleRate = 44100;
-        int bufferSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    public static void playSound(int repeatChirp) {
+        int bufferSize = AudioTrack.getMinBufferSize(Globals.SAMPLE_RATE,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
-        double sinRate = frequency * Math.PI / (0.5 * sampleRate);
+        double sinRate = Globals.CHIRP_FREQUENCY * Math.PI / (0.5 * Globals.SAMPLE_RATE);
 
         AudioTrack audioTrack = new AudioTrack.Builder()
                 .setAudioAttributes(new AudioAttributes.Builder()
@@ -26,22 +27,17 @@ public class ChirpEmitterBisccitAttempt {
                         .build())
                 .setAudioFormat(new AudioFormat.Builder()
                         .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                        .setSampleRate(sampleRate)
+                        .setSampleRate(Globals.SAMPLE_RATE)
                         .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                         .build())
                 .setBufferSizeInBytes(bufferSize)
                 .setTransferMode(AudioTrack.MODE_STREAM)
                 .build();
 
+        int relativeChirpDuration = (int)(Globals.CHIRP_DURATION * Globals.SAMPLE_RATE);
+        int relativeIntervalDuration = (int)(Globals.CHIRP_INTERVAL * Globals.SAMPLE_RATE);
 
-        double duration = 1;
-        double chirpDuration = 0.05;
-        double chirpInterval = 0.1;
-
-        int relativeChirpDuration = (int)(chirpDuration * sampleRate);
-        int relativeIntervalDuration = (int)(chirpInterval * sampleRate);
-
-        short[] audio = new short[(int)(sampleRate * duration)];
+        short[] audio = new short[(int)(Globals.SAMPLE_RATE * Globals.DURATION)];
 
         for (int i=0;i<audio.length;){
 

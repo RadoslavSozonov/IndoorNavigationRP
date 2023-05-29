@@ -1,6 +1,6 @@
 from flask import Flask, request 
-import firebase_admin
-from firebase_admin import credentials, firestore
+# import firebase_admin
+# from firebase_admin import credentials, firestore
 from scipy.io.wavfile import write
 from scipy.signal import spectrogram
 from scipy.signal.windows import hann
@@ -19,9 +19,9 @@ from DeepModels.CNNModel import CNNModel
 
 APP = Flask(__name__)
 
-cred = credentials.Certificate('key.json')
-app = firebase_admin.initialize_app(cred)
-db = firestore.client()
+# cred = credentials.Certificate('key.json')
+# app = firebase_admin.initialize_app(cred)
+# db = firestore.client()
 
 counter = 0
 
@@ -101,4 +101,4 @@ def clasify_room():
     return predicted_label
 
 if __name__ == '__main__':
-    APP.run(host='192.168.56.1', debug=True)
+    APP.run(host='0.0.0.0', debug=True)

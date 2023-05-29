@@ -27,8 +27,6 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 public class DataRecorder {
-
-    private final int CHIRP_FREQUENCY = 20000;
     private int chirpRepeat;
 
     private Activity activity;
@@ -57,7 +55,7 @@ public class DataRecorder {
             int count = 0;
             @Override
             public void run() {
-                ChirpEmitterBisccitAttempt.playSound(CHIRP_FREQUENCY, chirpRepeat);
+                ChirpEmitterBisccitAttempt.playSound(chirpRepeat);
             }
         };
 
@@ -68,7 +66,7 @@ public class DataRecorder {
         threadCapture.start();
 
         try {
-            Thread.sleep(100L*this.chirpRepeat);
+            Thread.sleep(50L*this.chirpRepeat);
             captureAcousticEcho.stopCapture();
             //timer.cancel();
             audioRecord.stop();
