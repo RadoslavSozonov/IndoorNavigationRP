@@ -4,53 +4,18 @@ package com.example.myapplication;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.media.AudioAttributes;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.AudioTrack;
-import android.media.MediaRecorder;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
-import org.json.JSONArray;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
-import com.example.myapplication.AudioTrack.CaptureAcousticEcho;
 import com.example.myapplication.AudioTrack.DataRecorder;
-import com.example.myapplication.AudioTrack.EmitChirpStackOFVersion;
 import com.example.myapplication.RequestCallbacks.LabelCallback;
-import com.example.myapplication.RequestCallbacks.MyUrlRequestCallback;
-import com.google.android.gms.net.CronetProviderInstaller;
-
-import org.chromium.net.CronetEngine;
-import org.chromium.net.UploadDataProvider;
-import org.chromium.net.UploadDataProviders;
-import org.chromium.net.UrlRequest;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 
 
 public class LabelWindow extends Activity {

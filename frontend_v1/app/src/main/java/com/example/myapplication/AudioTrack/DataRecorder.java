@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class DataRecorder {
 
-    private final int CHIRP_FREQUENCY = 19999;
+    private final int CHIRP_FREQUENCY = 20000;
     private int chirpRepeat;
 
     private Activity activity;
@@ -50,6 +50,9 @@ public class DataRecorder {
 //                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
         Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
         List<float[]> listOfRecords = new ArrayList<>();
+
+        //ChirpEmitterBisccitAttempt.playSound(CHIRP_FREQUENCY, chirpRepeat);
+
         TimerTask task = new TimerTask() {
             int count = 0;
             @Override
@@ -60,13 +63,14 @@ public class DataRecorder {
 
         Timer timer = new Timer("Timer");
         //audioRecord.startRecording();
-        timer.scheduleAtFixedRate(task, 1L, 100L);
+        //timer.scheduleAtFixedRate(task, 1L, 100L);
+        timer.schedule(task, 1L);
         threadCapture.start();
 
         try {
             Thread.sleep(100L*this.chirpRepeat);
             captureAcousticEcho.stopCapture();
-            timer.cancel();
+            //timer.cancel();
             audioRecord.stop();
             audioRecord.release();
             captureAcousticEcho.stopThread();

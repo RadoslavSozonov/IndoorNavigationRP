@@ -17,6 +17,7 @@ public class ChirpEmitterBisccitAttempt {
         int sampleRate = 44100;
         int bufferSize = AudioTrack.getMinBufferSize(sampleRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
+        double sinRate = frequency * Math.PI / (0.5 * sampleRate);
 
         AudioTrack audioTrack = new AudioTrack.Builder()
                 .setAudioAttributes(new AudioAttributes.Builder()
@@ -33,33 +34,24 @@ public class ChirpEmitterBisccitAttempt {
                 .build();
 
 
-        double duration = 0.02;
-        double interval = 0.1;
+        double duration = 1;
+        double chirpDuration = 0.05;
+        double chirpInterval = 0.1;
 
-        double break_length = interval - duration;
-        double amplitude = 1.0; // between -1.0 and 1.0
-        int numSamples = (int)(duration * sampleRate);
+        int relativeChirpDuration = (int)(chirpDuration * sampleRate);
+        int relativeIntervalDuration = (int)(chirpInterval * sampleRate);
 
-        short[] buffer = new short[numSamples];
-        double angularFrequency = 2.0 * Math.PI * frequency;
+        short[] audio = new short[(int)(sampleRate * duration)];
 
-        for (int i=0; i < numSamples; i++) {
-            double time = i / (double) sampleRate;
-            double bufferI = amplitude * Math.sin(angularFrequency * time);
-            buffer[i] = (short) (bufferI * Short.MAX_VALUE);
-        }
+        for (int i=0;i<audio.length;){
 
-        short[] audio = new short[(int) (interval * sampleRate * repeatChirp)];
-        int ite = 0;
-
-        while(ite < audio.length) {
-            for(int i = 0; i < buffer.length; i++) {
-                audio[ite] = buffer[i];
-                ite++;
+            for (int x=0;x<relativeChirpDuration && i<audio.length;x++, i++) {
+                double factor = 1;//0.5 + 0.5 * Math.sin(2 * Math.PI * x / relativeChirpDuration - 0.5 * Math.PI);
+                audio[i] = (short)(Short.MAX_VALUE * Math.sin(i * sinRate) * factor);
             }
-            for(int i = 0; i < (int) (break_length * sampleRate); i++) {
-                audio[ite] = (short) 0;
-                ite++;
+
+            for (int x=0;x<relativeIntervalDuration && i<audio.length;x++, i++) {
+                audio[i] = 0;
             }
         }
 
