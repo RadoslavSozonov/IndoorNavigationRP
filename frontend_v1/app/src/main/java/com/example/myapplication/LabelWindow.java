@@ -55,7 +55,6 @@ public class LabelWindow extends Activity {
     private CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
     @Override
     public void onBackPressed() {
-        System.out.println("Hey");
         if (!training) {
             super.onBackPressed();
         }
@@ -71,6 +70,7 @@ public class LabelWindow extends Activity {
         TextView building_label = (TextView) findViewById(R.id.label_of_building);
         TextView sent_label = (TextView) findViewById(R.id.sent_label);
         Button button_start = (Button) findViewById(R.id.button_submit);
+        Button button_train = (Button) findViewById(R.id.button_train);
         TextView progress = (TextView) findViewById(R.id.textView4);
 
         // get server IP
@@ -100,11 +100,13 @@ public class LabelWindow extends Activity {
             }
         }
 
-        Handler handler = new Handler();
         button_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!training) {
+                    if(room_label.getText().toString().trim().isEmpty() || building_label.getText().toString().trim().isEmpty()) {
+                        return;
+                    }
                     // get and set rooms label from user input
                     String label_room_text = room_label.getText().toString();
                     String label_building_text = building_label.getText().toString();
@@ -147,21 +149,39 @@ public class LabelWindow extends Activity {
 
                             new Thread(() -> {
                                 ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
+                                training = false;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        progress.setText("Done!");
+                                    }
+                                });
                             }).start();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    progress.setText("Done!");
-                                }
-                            });
-                            training = false;
                         }
                     }).start();
 
                 }
             }
         });
-
+        button_train.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                progress.setText("In progress");
+                new Thread(() -> {
+                    if (!training) {
+                        training = true;
+                        String response = ServerCommunication.startTraining(server_ip);
+                        training = false;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progress.setText(response);
+                            }
+                        });
+                    }
+                }).start();
+            }
+        });
         // Setup pop up layout
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);

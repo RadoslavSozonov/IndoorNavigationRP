@@ -13,10 +13,12 @@ class AcousticClassifier:
         self.int_to_label = []
         self.model = None
         self.training_lock = Lock()
+        self.model_trained = False
 
     def train(self, test_split=0.8):
         # setup the model
         with self.training_lock:
+            room_amount = self.db.get_room_amount()
             self.model = models.Sequential()
             self.model.add(
                         layers.Conv2D(
@@ -60,13 +62,14 @@ class AcousticClassifier:
             
             self.model.add(layers.Dense(1024))
             self.model.add(layers.Dropout(0.4))
-            self.model.add(layers.Dense(self.db.get_room_amount()))
+            self.model.add(layers.Dense(room_amount))
 
             self.model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
 
             self.model.summary()
+            print("room amount: " + str(room_amount))
 
             
             # Split the data into training and test set
@@ -74,6 +77,8 @@ class AcousticClassifier:
             self.int_to_label = int_to_label
             images_train, images_test, labels_train, labels_test = train_test_split(images, labels, test_size=test_split, random_state=42)
 
+            print("training set size: " + str(np.size(images_train)))
+            print("test set size: " + str(np.size(images_test)))
 
             # train the model
             history = self.model.fit(images_train, labels_train, epochs=200, 
@@ -91,6 +96,10 @@ class AcousticClassifier:
 
             # Clear the plot
             plt.clf()
+
+            self.model_trained = True
+
+
     def save_model(self, filename):
         with self.training_lock:
             self.model.save('./models/' + filename)
@@ -99,10 +108,15 @@ class AcousticClassifier:
         with self.training_lock:
             self.model = models.load_model('./models/' + filename)
 
-    def run(self, sample):
+    def classify(self, sample):
         with self.training_lock:
-            label_index = self.model.predict(sample)
-            return self.int_to_label[label_index]
+            if self.model_trained:
+                weights = self.model.predict(np.array([sample,]))
+                print(weights)
+                print(self.int_to_label)
+                return self.int_to_label[np.argmax(weights)]
+            else:
+                return "Model is not trained yet"
 
 # acoustic_classifier = AcousticClassifier()
 # acoustic_classifier.train()

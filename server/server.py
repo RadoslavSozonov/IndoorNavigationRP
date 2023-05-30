@@ -1,5 +1,6 @@
 from flask import Flask, request 
 from database import LocalDatabase
+from acoustic_classifier import AcousticClassifier
 from scipy.io.wavfile import write
 from scipy.io.wavfile import read
 import cv2
@@ -19,13 +20,14 @@ from datetime import datetime
 
 APP = Flask(__name__)
 db = LocalDatabase()
+acoustic_model = AcousticClassifier()
 
 interval = 0.1
 sample_rate = 44100
 chirp_amount = 200
 # amount of chirps that are ignored, since some of the last chirps dont work
 chirp_last_error = 3
-chirp_first_error = 1
+chirp_first_error = 2
 good_chirp_amount = chirp_amount - chirp_last_error - chirp_first_error
 chirp_radius = 0.016
 
@@ -87,13 +89,18 @@ def create_spectrogram(array, filename):
     not_rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
     cv2.imwrite(filename, not_rgb)
 
-    return rgb
-
 
 @APP.route('/get_rooms', methods=['GET'])
 def get_rooms():
 
     return db.get_buildings_with_rooms()
+
+
+@APP.route('/train', methods=['GET'])
+def train_model():
+    acoustic_model.train(0.8)
+    return "Done!"
+
 
 @APP.route('/add_room', methods=['POST'])
 def add_room():
@@ -131,13 +138,17 @@ def add_room():
 
 
 @APP.route('/recognize_room', methods=['POST'])
-def calsify_room():
+def recognize_room():
     room_data = request.json
-    room_label = room_data['room_label']
-    building_label = room_data['building_label']
     room_audio = room_data['audio']
-    #TODO: run the clasifier
-    result = 'room_1'
+    np_arr = np.asarray(room_audio, dtype=np.int16)
+    np_arr = np_arr[0, int(chirp_first_error * interval_samples): int((chirp_amount - chirp_last_error) * interval_samples)]
+    first_chirp_offset = find_first_chirp(np_arr)
+    sliced = sliced = np_arr[int( first_chirp_offset + chirp_radius_samples): int(interval_samples + first_chirp_offset - chirp_radius_samples)]
+    filename = "echo.png"
+    create_spectrogram(sliced, filename)
+    time.sleep(0.1)
+    result = acoustic_model.classify(db.get_grayscale_image(filename))
     return result
 
 if __name__ == '__main__':

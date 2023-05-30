@@ -56,6 +56,38 @@ public class ServerCommunication {
         }
     }
 
+
+    public static String startTraining(String ip) {
+        URL url = null;
+
+        try {
+            url = new URL("http://" + ip +":5000/train");
+        } catch (MalformedURLException e) {
+            return "Server error URL";
+        }
+
+        try {
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            int status_code = connection.getResponseCode();
+            if(status_code == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                String response_string = response.toString();
+                return response_string;
+            } else return "Server returned response: " + status_code;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "Server error";
+        }
+    }
+
     public static void addRoom(Room room, String ip) {
         URL url = null;
 
@@ -75,7 +107,18 @@ public class ServerCommunication {
             connection.getOutputStream();
             DataOutputStream out = new DataOutputStream(connection.getOutputStream());
             out.writeBytes(body);
-            connection.getResponseCode();
+            int status_code = connection.getResponseCode();
+            if(status_code == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
