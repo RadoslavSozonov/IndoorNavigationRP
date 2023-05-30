@@ -4,8 +4,12 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -31,9 +35,37 @@ public class MainActivity extends AppCompatActivity {
 
         list_of_rooms.setText(rooms);
 
-        // Make a pop up showing the room label
-        Intent server_ip_intent = new Intent(MainActivity.this, SetServerIp.class);
+        // Get permission for microphone before recognition starts
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
 
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.RECORD_AUDIO)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.RECORD_AUDIO},
+                        1);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+
+        }
+
+
+        // Set custom server IP
+        Intent server_ip_intent = new Intent(MainActivity.this, SetServerIp.class);
         ActivityResultLauncher<Intent> serverActivityIpLauncher =
                 registerForActivityResult(new
                                 ActivityResultContracts.StartActivityForResult(),
@@ -44,21 +76,21 @@ public class MainActivity extends AppCompatActivity {
                             // code to process data from activity called
                         }
                 );
-        if(!useStaticIp) {
+        // get list of rooms either using static ip or given ip
+        if(useStaticIp) {
+            new Thread(new GetRoomsExecutor(rooms, this, server_ip)).start();
+        } else {
             serverActivityIpLauncher.launch(server_ip_intent);
         }
         // Popup for recognizing the current room
         button_recognize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: get the label of the room
-                String room_label = "room 1";
-
 
                 // Make a pop up showing the room label
                 Intent intent = new Intent(MainActivity.this, RecognizeWindow.class);
                 intent.putExtra("title", "The room label is:");
-                intent.putExtra("text", room_label);
+                intent.putExtra("server_ip", server_ip);
                 startActivity(intent);
             }
         });

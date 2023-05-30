@@ -37,7 +37,8 @@ class LocalDatabase:
                 count = count + 1
         return count
     def get_buildings_with_rooms(self):
-        buildings = []
+        buildings = {}
+        room_list = []
         for building_label in next(os.walk('./images'))[1]:
             for room_label in next(os.walk('./images/' + building_label))[1]:
                 # add room to the list

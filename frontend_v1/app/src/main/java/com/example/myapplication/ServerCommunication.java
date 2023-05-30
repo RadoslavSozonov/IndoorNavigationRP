@@ -85,4 +85,62 @@ public class ServerCommunication {
 
     }
 
+    public static String recognizeRoom(Room room, String ip) {
+        URL url = null;
+
+        try {
+            url = new URL("http://" + ip +":5000/recognize_room");
+        } catch (MalformedURLException e) {
+            return "server URL not found";
+        }
+
+        try {
+            //String body = "{\"audio\": " + new Gson().toJson(audiolist) + "}";
+            String body = new Gson().toJson(room);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            connection.getOutputStream();
+            DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+            out.writeBytes(body);
+            int status_code = connection.getResponseCode();
+            if(status_code == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                String label = response.toString();
+
+                return label;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "Server IO error";
+        }
+
+        return "Server error";
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

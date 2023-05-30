@@ -18,13 +18,13 @@ from datetime import datetime
 
 
 APP = Flask(__name__)
-db = Database()
+db = LocalDatabase()
 
 interval = 0.1
 sample_rate = 44100
 chirp_amount = 200
 # amount of chirps that are ignored, since some of the last chirps dont work
-chirp_last_error = 2
+chirp_last_error = 3
 chirp_first_error = 1
 good_chirp_amount = chirp_amount - chirp_last_error - chirp_first_error
 chirp_radius = 0.016
@@ -130,9 +130,12 @@ def add_room():
     return 'OK'
 
 
-@APP.route('/clasify', methods=['POST'])
+@APP.route('/recognize_room', methods=['POST'])
 def calsify_room():
-    audio = request.files['audio']
+    room_data = request.json
+    room_label = room_data['room_label']
+    building_label = room_data['building_label']
+    room_audio = room_data['audio']
     #TODO: run the clasifier
     result = 'room_1'
     return result

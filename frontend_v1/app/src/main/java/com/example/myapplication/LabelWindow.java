@@ -52,7 +52,7 @@ public class LabelWindow extends Activity {
 
     // Back is disabled during labelling
     private boolean training = false;
-    private CyclicBarrier cyclicBarrier = new CyclicBarrier(1);
+    private CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
     @Override
     public void onBackPressed() {
         System.out.println("Hey");
