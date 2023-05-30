@@ -1,6 +1,5 @@
 from flask import Flask, request 
-import firebase_admin
-from firebase_admin import credentials, firestore
+from database import LocalDatabase
 from scipy.io.wavfile import write
 from scipy.io.wavfile import read
 import cv2
@@ -19,11 +18,7 @@ from datetime import datetime
 
 
 APP = Flask(__name__)
-
-# cred = credentials.Certificate('key.json')
-# app = firebase_admin.initialize_app(cred)
-# db = firestore.client()
-
+db = Database()
 
 interval = 0.1
 sample_rate = 44100
@@ -75,12 +70,17 @@ def create_spectrogram(array, filename):
     f = f[high_frequency_indices]
     Sxx = Sxx[high_frequency_indices]
 
+    # Plot the spectrogram and save it
     plt.pcolormesh(t, f, Sxx, shading='gouraud')
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.savefig(filename)
 
-    time.sleep(0.2)
+    # Clear the plot
+    plt.clf()
+
+    # After saving, read the image and extract the graph from the figure
+    time.sleep(0.1)
     rgb = cv2.imread(filename)
     rgb = rgb[59:428, 80:579]
     rgb = cv2.resize(rgb, (32, 5))
@@ -92,16 +92,8 @@ def create_spectrogram(array, filename):
 
 @APP.route('/get_rooms', methods=['GET'])
 def get_rooms():
-    room_list = []
-    response_body = {}
-    collections = db.collections()
-    for collection in collections:
-        for document in collection.list_documents():
-            room_list.append(document.get().to_dict()["room"])
-        response_body.update({collection.id: room_list})
-        room_list = []
 
-    return response_body
+    return db.get_buildings_with_rooms()
 
 @APP.route('/add_room', methods=['POST'])
 def add_room():
@@ -113,16 +105,7 @@ def add_room():
 
     today = datetime.now()
     classify_date = today.strftime("%b-%d-%Y-%H-%M-%S")
-    
-    # update_time, doc_ref = db.collection(building_label).add({})
-    # data = {
-    #     u'building': building_label,
-    #     u'room': room_label,
-    #     u'audio': "Currently stored locally",
-    #     u'uuid':doc_ref.id
-    # }
 
-    # doc_ref.update(data)
 
     np_arr = np.asarray(room_audio, dtype=np.int16)
     training_set_directory = './images/'+ str(building_label) + '/' + str(room_label)
