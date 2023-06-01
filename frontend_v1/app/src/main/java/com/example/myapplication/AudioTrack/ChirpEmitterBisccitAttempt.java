@@ -4,6 +4,7 @@ import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.media.audiofx.LoudnessEnhancer;
 
 import com.example.myapplication.Globals;
 
@@ -50,6 +51,11 @@ public class ChirpEmitterBisccitAttempt {
                 audio[i] = 0;
             }
         }
+
+//        LoudnessEnhancer enhancer = new LoudnessEnhancer(audioTrack.getAudioSessionId());
+//
+//        enhancer.setTargetGain(10000);
+//        enhancer.setEnabled(true);
 
         audioTrack.play();
         audioTrack.write(audio, 0, audio.length);

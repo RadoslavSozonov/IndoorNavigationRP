@@ -12,6 +12,7 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.myapplication.Globals;
 import com.example.myapplication.LabelWindow;
 import com.example.myapplication.Util;
 
@@ -35,7 +36,7 @@ public class CaptureAcousticEcho implements Runnable {
     public CaptureAcousticEcho(AudioRecord audioRecord, int repeatChirp) {
         this.audioRecord = audioRecord;
         this.repeatChirp = repeatChirp;
-        int bufferSize = (int) (44100 * 0.1 * repeatChirp);
+        int bufferSize = (int) (44100 * Globals.DURATION);
         this.bufferSize = bufferSize;
         this.buffer= new float[bufferSize];// should be 44100*0.1
     }

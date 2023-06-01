@@ -12,6 +12,7 @@ import android.widget.TextView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.myapplication.Globals;
 import com.example.myapplication.R;
 import com.example.myapplication.RequestCallbacks.RecordingCallback;
 import com.example.myapplication.Util;
@@ -66,7 +67,7 @@ public class DataRecorder {
         threadCapture.start();
 
         try {
-            Thread.sleep(50L*this.chirpRepeat);
+            Thread.sleep((long)(Globals.DURATION * 1000));
             captureAcousticEcho.stopCapture();
             //timer.cancel();
             audioRecord.stop();

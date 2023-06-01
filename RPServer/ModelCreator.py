@@ -1,4 +1,3 @@
-import firebaseConfig as firebase
 from DeepModels.CNNModel import CNNModel
 import tensorflow as tf
 import numpy as np
@@ -27,7 +26,6 @@ class ModelCreator:
     '''
     def trainModel(self, modelName, building):
         # print(modelName)
-        data, labelsN = firebase.get_from_real_time_database(building)
         if modelName == "cnn":
             cnn_model = CNNModel()
 
