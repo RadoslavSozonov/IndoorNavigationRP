@@ -37,9 +37,9 @@ def add_new_location_point():
 
     sound_sample = dictionary['1']
 
-    output_signal =  audioFilter.apply_high_pass_filter(sound_sample, 19000)
+    output_signal =  audioFilter.apply_high_pass_filter(sound_sample, 9000)
 
-    # spectogramCreator.generate_audio_graph(output_signal, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_.png')
+    spectogramCreator.generate_audio_graph(output_signal, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_.png')
 
     # spectogramCreator.generate_spectogram(output_signal, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_SPECT.png')
 

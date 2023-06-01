@@ -43,7 +43,7 @@ public class ChirpEmitterBisccitAttempt {
         for (int i=0;i<audio.length;){
 
             for (int x=0;x<relativeChirpDuration && i<audio.length;x++, i++) {
-                double factor = 1;//0.5 + 0.5 * Math.sin(2 * Math.PI * x / relativeChirpDuration - 0.5 * Math.PI);
+                double factor = 0.5 + 0.5 * Math.sin(2 * Math.PI * x / relativeChirpDuration - 0.5 * Math.PI);
                 audio[i] = (short)(Short.MAX_VALUE * Math.sin(i * sinRate) * factor);
             }
 
@@ -54,7 +54,7 @@ public class ChirpEmitterBisccitAttempt {
 
 //        LoudnessEnhancer enhancer = new LoudnessEnhancer(audioTrack.getAudioSessionId());
 //
-//        enhancer.setTargetGain(10000);
+//        enhancer.setTargetGain(5000);
 //        enhancer.setEnabled(true);
 
         audioTrack.play();
