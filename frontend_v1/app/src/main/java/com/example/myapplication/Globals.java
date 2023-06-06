@@ -9,4 +9,6 @@ public class Globals {
 
     public static double RECORDING_INTERVAL = 0.1;
 
+    public static int REPEAT_WIFI = 5;
+    public static int THROTTLE_WIFI_MS = 10000;
 }

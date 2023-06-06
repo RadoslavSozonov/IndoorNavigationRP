@@ -68,8 +68,8 @@ public class RecognizeWindow extends Activity {
                 listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
                 audioRecord.stop();
                 audioRecord.release();
-                String label = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown"), server_ip);
-                runOnUiThread(() -> popup_text.setText(label));
+//                String label = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown"), server_ip);
+//                runOnUiThread(() -> popup_text.setText(label));
             }
         }).start();
 

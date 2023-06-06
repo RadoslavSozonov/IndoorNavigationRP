@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 import time
 import constants
 import os
+import json
+ 
+
 
 
 matplotlib.use('Agg')
@@ -111,6 +114,29 @@ def create_training_set(np_arr, building_label, room_label):
         end_rate = int((i + 1) * constants.interval_samples + first_chirp_offset - constants.chirp_radius_samples  )
         sliced = np_arr[start_rate : end_rate]
         create_spectrogram(sliced, training_set_directory+ '/' + classify_date + '-' + str(i) + '.png')
+    
+def create_wifi_training_set(wifi_list, building_label, room_label):
+    today = datetime.now()
+    classify_date = today.strftime("%b-%d-%Y-%H-%M-%S")
+
+    # setup directories for data collection
+    training_set_directory = './wifi/'+ str(building_label) + '/' + str(room_label)
+    meta_data_directory = './metadata/'+ str(building_label) + '/' + str(room_label)
+    if not os.path.exists(training_set_directory):
+        # Create a new directory because it does not exist
+        os.makedirs(training_set_directory)
+    if not os.path.exists(meta_data_directory):
+        # Create a new directory because it does not exist
+        os.makedirs(meta_data_directory)
+    count = 0
+    for wifi_fingerprint in wifi_list:
+        # Serializing json
+        json_object = json.dumps(wifi_fingerprint, indent=4)
+        
+        # Writing to sample.json
+        with open(training_set_directory + "/" + str(count) +"-" + classify_date + ".json", "w") as outfile:
+            outfile.write(json_object)
+        count = 1 + count
     
 def cross_corelation(arr, filename=None):
 

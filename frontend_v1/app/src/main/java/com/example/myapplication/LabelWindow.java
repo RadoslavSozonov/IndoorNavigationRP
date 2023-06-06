@@ -3,16 +3,18 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.net.Uri;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -20,39 +22,25 @@ import android.widget.TextView;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
 import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 
-import com.example.myapplication.RequestCallbacks.MyUrlRequestCallback;
-import com.google.android.gms.net.CronetProviderInstaller;
-
-import org.chromium.net.CronetEngine;
-import org.chromium.net.UploadDataProvider;
-import org.chromium.net.UploadDataProviders;
-import org.chromium.net.UrlRequest;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 
 public class LabelWindow extends Activity {
 
 
     // Back is disabled during labelling
+    private boolean waitingForScan = true;
     private boolean training = false;
     private CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
+
+    private List<WiFiFingerprint> wifi_list;
     @Override
     public void onBackPressed() {
         if (!training) {
@@ -64,6 +52,55 @@ public class LabelWindow extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.popup_label);
+
+//        WifiRttManager wifiRttManager = (WifiRttManager) getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
+//        System.out.println(this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_RTT));
+
+
+//        IntentFilter filter =
+//                new IntentFilter(WifiRttManager.ACTION_WIFI_RTT_STATE_CHANGED);
+//        BroadcastReceiver myReceiver = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                if (wifiRttManager.isAvailable()) {
+//
+//                } else {
+//
+//                }
+//            }
+//        };
+//        this.registerReceiver(myReceiver, filter);
+
+
+        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+        BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                boolean success = intent.getBooleanExtra(
+                        WifiManager.EXTRA_RESULTS_UPDATED, false);
+                if (success) {
+
+                    List<ScanResult> results = wifiManager.getScanResults();
+                    List<WiFiInfo> fingerprint = new ArrayList<>();
+                    for (ScanResult scanResult : results) {
+                        int level = WifiManager.calculateSignalLevel(scanResult.level, 100);
+//                        System.out.println(scanResult.SSID);
+//                        System.out.println(scanResult.BSSID);
+                        fingerprint.add(new WiFiInfo(scanResult.BSSID, scanResult.SSID, level));
+                    }
+                    wifi_list.add(new WiFiFingerprint(fingerprint));
+                    waitingForScan = false;
+
+
+                } else {
+                    // scan failure handling
+                    System.out.println("not success :(");
+                }
+            }
+        };
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        this.registerReceiver(wifiScanReceiver, intentFilter);
 
         // Get layout components
         TextView room_label = (TextView) findViewById(R.id.label_of_room);
@@ -77,34 +114,12 @@ public class LabelWindow extends Activity {
         Intent intent = getIntent();
         String server_ip = intent.getStringExtra("server_ip");
 
-        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
-        if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP) {
-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                    PackageManager.PERMISSION_GRANTED) {
-
-                // Should we show an explanation?
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.RECORD_AUDIO)) {
-
-                    // Show an expanation to the user *asynchronously* -- don't block
-                    // this thread waiting for the user's response! After the user
-                    // sees the explanation, try again to request the permission.
-
-                } else {
-
-                    // No explanation needed, we can request the permission.
-
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-                }
-            }
-        }
 
         button_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!training) {
-                    if(room_label.getText().toString().trim().isEmpty() || building_label.getText().toString().trim().isEmpty()) {
+                    if (room_label.getText().toString().trim().isEmpty() || building_label.getText().toString().trim().isEmpty()) {
                         return;
                     }
                     // get and set rooms label from user input
@@ -115,6 +130,7 @@ public class LabelWindow extends Activity {
                     // Disable back button while labeling
                     training = true;
 
+                    wifi_list = new ArrayList<>();
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -147,8 +163,26 @@ public class LabelWindow extends Activity {
                             audioRecord.stop();
                             audioRecord.release();
 
+
+                            // Collect WiFi Data
+                            for (int i = 0; i < Globals.REPEAT_WIFI; i++) {
+                                waitingForScan = true;
+//                                System.out.println(i);
+                                boolean success = wifiManager.startScan();
+                                if (!success) {
+                                    // scan failure handling
+                                    System.out.println("No success here :(");
+                                }
+                                while(waitingForScan);
+                                try {
+                                    Thread.sleep(Globals.THROTTLE_WIFI_MS);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+
                             new Thread(() -> {
-                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
+                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim(), wifi_list), server_ip);
                                 training = false;
                                 runOnUiThread(new Runnable() {
                                     @Override
@@ -203,6 +237,7 @@ public class LabelWindow extends Activity {
             @Override
             public void onClick(View v) {
                 if (!training) {
+
                     finish();
                 }
             }

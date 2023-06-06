@@ -1,6 +1,6 @@
 from flask import Flask, request 
 from database import LocalDatabase
-from data_handling import find_first_chirp, create_spectrogram, create_training_set, create_single_echo
+from data_handling import find_first_chirp, create_spectrogram, create_training_set, create_single_echo, create_wifi_training_set
 from acoustic_classifier import AcousticClassifier
 from scipy.io.wavfile import write
 from scipy.io.wavfile import write
@@ -41,6 +41,8 @@ def add_room():
     room_label = room_data['room_label']
     building_label = room_data['building_label']
     room_audio = room_data['audio']
+    wifi_list = room_data['wifi_list']
+    
 
     np_arr = np.asarray(room_audio, dtype=np.int16)
     # Cut out all the bad chirps
@@ -48,6 +50,8 @@ def add_room():
 
     # Create the dataset
     create_training_set(np_arr, building_label, room_label)
+
+    create_wifi_training_set(wifi_list, building_label, room_label)
 
     return 'OK'
 
