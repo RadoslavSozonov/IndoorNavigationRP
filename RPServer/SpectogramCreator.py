@@ -4,9 +4,11 @@ import numpy as np
 import scipy.fft as fft
 import scipy.signal as sps
 
+from AudioFilter import AudioFilter
+
 class SpectogramCreator:
     def __init__(self):
-        self.x = "data"
+        self.audioFilter = AudioFilter()
 
     def generate_black_white_spectogram(self, audio_data, filename):
         X = librosa.stft(np.array(audio_data))
@@ -19,9 +21,13 @@ class SpectogramCreator:
     
     def generate_fourier_graph(self, audio_data, filename):
         N = len(audio_data)
-        T = 1.0 / 800.0
+        T = 1.0 / 44100
         yf = fft.fft(audio_data)
         xf = fft.fftfreq(N, T)[: N//2]
+
+        yf = self.audioFilter.smooth(self.audioFilter.envelope(yf))
+        # yf = self.audioFilter.smooth(yf)
+
         plt.clf()
         plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
         plt.grid()
