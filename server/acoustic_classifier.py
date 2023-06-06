@@ -60,12 +60,12 @@ class AcousticClassifier:
 
             self.model.add(layers.Flatten())
             
-            self.model.add(layers.Dense(1024))
+            self.model.add(layers.Dense(1024, activation='relu'))
             self.model.add(layers.Dropout(0.4))
-            self.model.add(layers.Dense(room_amount))
+            self.model.add(layers.Dense(room_amount, activation='softmax'))
 
             self.model.compile(optimizer='adam',
-                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
 
             self.model.summary()
@@ -81,8 +81,8 @@ class AcousticClassifier:
             print("test set size: " + str(np.size(images_test)))
 
             # train the model
-            history = self.model.fit(images_train, labels_train, epochs=200, 
-                        validation_data=(images_test, labels_test))
+            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=200, 
+                        validation_data=(images_test, tf.keras.utils.to_categorical(labels_test, room_amount)))
 
             
             plt.plot(history.history['accuracy'], label='accuracy')
@@ -92,7 +92,7 @@ class AcousticClassifier:
             plt.ylim([0.5, 1])
             plt.legend(loc='lower right')
 
-            plt.savefig("current_model_accuracy.png")
+            plt.savefig("./metadata/current_model_accuracy.png")
 
             # Clear the plot
             plt.clf()
@@ -118,7 +118,9 @@ class AcousticClassifier:
             else:
                 return "Model is not trained yet"
 
-# acoustic_classifier = AcousticClassifier()
-# acoustic_classifier.train()
 
 
+
+if __name__ == "__main__":
+    acoustic_classifier = AcousticClassifier()
+    acoustic_classifier.train()

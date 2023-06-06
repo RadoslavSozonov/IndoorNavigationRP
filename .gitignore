@@ -2,3 +2,4 @@ __pycache__
 key.json
 .idea
 server/images
+server/metadata
