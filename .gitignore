@@ -2,3 +2,4 @@
 RPServer/__pycache__/
 RPServer/DeepModels/__pycache__/
 *.pyc
+# RPServer/database/

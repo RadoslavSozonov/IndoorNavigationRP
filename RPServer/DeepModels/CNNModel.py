@@ -1,7 +1,6 @@
 from DeepModels.CNNSingelton import CNNSingelton
 import tensorflow as tf
 
-
 class CNNModel(CNNSingelton):
 
     def __init__(self):

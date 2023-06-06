@@ -1,0 +1,13 @@
+# spectogramCreator.generate_fourier_graph(filtered_sample, filename(building, room, "FOURIER_SMOOTH"), True)
+
+    # spectogramCreator.generate_fourier_spectrogram(filtered_sample, filename(building, room, "FSPECT"))
+
+# spectogramCreator.generate_audio_graph(enveloped, filename(building, room, "TIMEGRAPH_SMOOTH"))
+
+    # spectogramCreator.generate_audio_graph(filtered_sample, filename(building, room, "TIMEGRAPH"))
+
+    # spectogramCreator.generate_spectogram(output_signal, filename(building, room, "SPECT"))
+
+    # spectogramCreator.generate_alternative_spectogram(output_signal, filename(building, room, "SPECTALT"))
+
+    # spectogramCreator.generate_black_white_spectogram(filtered_sample, filename(building, room, "BW_SPECT"))

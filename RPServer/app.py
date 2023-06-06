@@ -14,16 +14,25 @@ from SpectogramCreator import SpectogramCreator
 # from DeepModels.CNNModel import CNNModel
 from AudioFilter import AudioFilter
 from SignalMock import SignalMock
+from Database import Database
 
 APP = Flask(__name__)
 
 spectogramCreator = SpectogramCreator()
 audioFilter = AudioFilter()
 signalMock = SignalMock()
+database = Database()
 
 counter = 0
 
+datafolder = "database\\"
+
 # cnnModel : CNNModel
+
+@APP.route('/clear_database', methods=['GET'])
+def clear_database():
+    database.clear()
+    return "Database cleared"
 
 @APP.route('/mock_input', methods=['GET'])
 def mock_input():
@@ -50,30 +59,18 @@ def add_new_location_point():
 
     return handle_input(sound_sample, placeLabel, buildingLabel)
 
-def handle_input(sound_sample, placeLabel, buildingLabel):
-    filtered_sample =  audioFilter.apply_high_pass_filter(sound_sample, 14000)
-    enveloped = audioFilter.envelope(filtered_sample)
+def handle_input(sound_sample, room, building):
+    filtered_sample =  audioFilter.apply_high_pass_filter(sound_sample, 9000)
+    # enveloped = audioFilter.smooth(audioFilter.envelope(filtered_sample))
 
-    enveloped = audioFilter.smooth(enveloped)
-
-    spectogramCreator.generate_audio_graph(enveloped, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_.png')
-
-    frequencies, power_spectrum = sps.periodogram(filtered_sample)
-    plt.figure()
-    plt.plot(frequencies, power_spectrum)
-    plt.xlabel('Frequency')
-    plt.ylabel('Power Spectrum')
-    plt.title('Periodogram Analysis')
-    plt.grid(True)
-    plt.savefig("periodogram.png")
-
-    # spectogramCreator.generate_spectogram(output_signal, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_SPECT.png')
-
-    # spectogramCreator.generate_alternative_spectogram(output_signal, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_SPECTALT.png')
-
-    # spectogramCreator.generate_black_white_spectogram(filtered_sample, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_SPECT_BW.png')
-
-    spectogramCreator.generate_fourier_graph(filtered_sample, 'plot_building_' + buildingLabel + '_room_'+placeLabel+'_FOURIER.png')
+    duration = 3
+    cnt = 0
+    window = duration * 44100
+    for i in range(0, len(filtered_sample) - window,  window):
+        fy = spectogramCreator.generate_fourier_graph(filtered_sample[i: i+window], filename(building, room, "FOURIER_"+str(cnt)), False)
+        # ADD TO DATABASE
+        database.save_image(building, room, fy)
+        cnt += 1
 
     print("added room!")
     return "Success"
@@ -108,6 +105,9 @@ def handle_input(sound_sample, placeLabel, buildingLabel):
 #     print("predicted label: " + predicted_label)
 
 #     return predicted_label
+
+def filename(building, room, ID):
+    return datafolder + 'B(' + building + ')_R('+room+')_'+ID+'.png'
 
 if __name__ == '__main__':
     APP.run(host='0.0.0.0', debug=True)
