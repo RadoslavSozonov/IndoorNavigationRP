@@ -78,7 +78,7 @@ class AcousticClassifier:
             # print("test set size: " + str(np.size(images_test)))
 
             # train the model
-            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=10, 
+            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=30, 
                         validation_data=(images_test, tf.keras.utils.to_categorical(labels_test, room_amount)))
 
             

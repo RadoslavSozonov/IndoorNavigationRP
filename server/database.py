@@ -23,7 +23,7 @@ class LocalDatabase:
         grey = np.asarray(grey)
         return grey
 
-    def get_acoustic_training_set(self):
+    def get_acoustic_training_set(self, time="night"):
         images = []
         labels = []
         int_to_label = []
@@ -32,7 +32,7 @@ class LocalDatabase:
         for building_label in next(os.walk('./images'))[1]:
             for room_label in next(os.walk('./images/' + building_label))[1]:
                 # get all images for this room
-                full_path = './images/' + building_label + '/' + room_label
+                full_path = './images/' + building_label + '/' + room_label + "/" + time
                 full_label = building_label + ': ' + room_label
                 files = (file for file in os.listdir(full_path) 
                         if os.path.isfile(os.path.join(full_path, file)))
@@ -60,12 +60,12 @@ class LocalDatabase:
             BSSID = wifi_unique_BSSID[i]
             np_arr[i] = next((x["level"] for x in wifi_list if x["BSSID"] == BSSID), 0)
         return np_arr
-    def get_unique_wifi_BSSID(self):
+    def get_unique_wifi_BSSID(self, time="night"):
         wifi_BSSID = []
         for building_label in next(os.walk('./wifi'))[1]:
             for room_label in next(os.walk('./wifi/' + building_label))[1]:
                 # get all wifi fingerprints for this room
-                full_path = './wifi/' + building_label + '/' + room_label
+                full_path = './wifi/' + building_label + '/' + room_label + "/" + time
                 full_label = building_label + ': ' + room_label
                 files = (file for file in os.listdir(full_path) 
                         if os.path.isfile(os.path.join(full_path, file)))
@@ -78,7 +78,7 @@ class LocalDatabase:
         
         return unique(wifi_BSSID)
 
-    def get_wifi_training_set(self):
+    def get_wifi_training_set(self, time="night"):
         wifi_fingerprints = []
         labels = []
         int_to_label = []
@@ -88,7 +88,7 @@ class LocalDatabase:
         for building_label in next(os.walk('./wifi'))[1]:
             for room_label in next(os.walk('./wifi/' + building_label))[1]:
                 # get all wifi fingerprints for this room
-                full_path = './wifi/' + building_label + '/' + room_label
+                full_path = './wifi/' + building_label + '/' + room_label + "/" + time
                 full_label = building_label + ': ' + room_label
                 files = (file for file in os.listdir(full_path) 
                         if os.path.isfile(os.path.join(full_path, file)))

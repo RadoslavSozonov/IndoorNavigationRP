@@ -5,7 +5,7 @@ recognize_chirp_amount = 10
 # amount of chirps that are ignored, since some of the last chirps dont work
 chirp_last_error = 5
 chirp_first_error = 5
-good_chirp_amount = chirp_amount - chirp_last_error - chirp_first_error
+good_chirp_amount = chirp_amount - chirp_last_error - chirp_first_error - 1
 chirp_radius = 0.016
 
 interval_samples = sample_rate * interval

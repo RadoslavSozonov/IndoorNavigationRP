@@ -2,11 +2,16 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -27,6 +32,8 @@ import java.util.concurrent.CyclicBarrier;
 
 public class RecognizeWindow extends Activity {
     private CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
+    private List<WiFiFingerprint> wifi_list;
+    private boolean waitingForScan = true;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,9 +44,59 @@ public class RecognizeWindow extends Activity {
         Intent intent = getIntent();
         String server_ip = intent.getStringExtra("server_ip");
 
+
+        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+        BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                boolean success = intent.getBooleanExtra(
+                        WifiManager.EXTRA_RESULTS_UPDATED, false);
+                if (success) {
+
+                    List<ScanResult> results = wifiManager.getScanResults();
+                    List<WiFiInfo> fingerprint = new ArrayList<>();
+                    for (ScanResult scanResult : results) {
+                        int level = WifiManager.calculateSignalLevel(scanResult.level, 100);
+//                        System.out.println(scanResult.SSID);
+//                        System.out.println(scanResult.BSSID);
+                        fingerprint.add(new WiFiInfo(scanResult.BSSID, scanResult.SSID, level));
+                    }
+                    wifi_list.add(new WiFiFingerprint(fingerprint));
+                    waitingForScan = false;
+
+
+                } else {
+                    // scan failure handling
+                    System.out.println("not success :(");
+                }
+            }
+        };
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        this.registerReceiver(wifiScanReceiver, intentFilter);
+
+
+
+
+
         new Thread(new Runnable() {
             @Override
             public void run() {
+
+
+
+                wifi_list = new ArrayList<>();
+                waitingForScan = true;
+
+                boolean success = wifiManager.startScan();
+                if (!success) {
+                    // scan failure handling
+                    System.out.println("No success here :(");
+                }
+                while(waitingForScan);
+
+
+
                 AudioRecord audioRecord = createAudioRecord();
                 int buffer_size = (int) (Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP_RECOGNIZE);
                 short[] buffer = new short[buffer_size];
@@ -68,8 +125,8 @@ public class RecognizeWindow extends Activity {
                 listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
                 audioRecord.stop();
                 audioRecord.release();
-//                String label = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown"), server_ip);
-//                runOnUiThread(() -> popup_text.setText(label));
+                String label = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown", wifi_list), server_ip);
+                runOnUiThread(() -> popup_text.setText(label));
             }
         }).start();
 

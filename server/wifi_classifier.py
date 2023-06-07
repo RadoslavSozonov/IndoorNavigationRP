@@ -47,3 +47,16 @@ class WifiClassifier:
                 return self.model.predict_proba(sample)
             else:
                 return "Model is not trained yet"
+
+
+
+
+if __name__ == "__main__":
+    
+    wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
+    room_amount = db.get_room_amount()
+    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=test_split, random_state=42)
+    acoustic_model.train(acoustic_dataset, image_int_to_label, room_amount)
+    wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount)
+
+    test_classifiers(acoustic_dataset[1], acoustic_dataset[3], wifi_dataset[1], wifi_dataset[3])

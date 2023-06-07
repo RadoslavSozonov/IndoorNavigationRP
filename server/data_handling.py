@@ -195,13 +195,20 @@ def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
     print("TWO STEP LOCALIZATION ACCURACY: " + str(two_step_accuracy))
 
 def train_classifiers(test_split=0.2): 
+    room_amount = db.get_room_amount()
+
     images, image_labels, image_int_to_label = db.get_acoustic_training_set()
     wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
-    room_amount = db.get_room_amount()
-    acoustic_dataset = train_test_split(images, image_labels, test_size=0.8, random_state=42)
+    acoustic_dataset = train_test_split(images, image_labels, test_size=test_split, random_state=42)
     wifi_dataset = train_test_split(wifis, wifi_labels, test_size=test_split, random_state=42)
+
     acoustic_model.train(acoustic_dataset, image_int_to_label, room_amount)
     wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount)
+
+    images, image_labels, image_int_to_label = db.get_acoustic_training_set()
+    wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
+    acoustic_dataset = train_test_split(images, image_labels, test_size=0.9, random_state=42)
+    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=0.9, random_state=42)
 
     test_classifiers(acoustic_dataset[1], acoustic_dataset[3], wifi_dataset[1], wifi_dataset[3])
         
