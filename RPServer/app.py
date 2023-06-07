@@ -1,20 +1,13 @@
 from flask import Flask, request 
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mtplt
 import json
-import scipy.signal as sps
+from scipy.io import wavfile
+import numpy as np
 
-mtplt.use('Agg')
-
-import wave
-
-# from ModelCreator import ModelCreator
 from SpectogramCreator import SpectogramCreator
-# from DeepModels.CNNModel import CNNModel
 from AudioFilter import AudioFilter
 from SignalMock import SignalMock
 from Database import Database
+from Model import Model
 
 APP = Flask(__name__)
 
@@ -22,12 +15,17 @@ spectogramCreator = SpectogramCreator()
 audioFilter = AudioFilter()
 signalMock = SignalMock()
 database = Database()
+model = Model()
 
 counter = 0
 
 datafolder = "database\\"
 
 # cnnModel : CNNModel
+
+@APP.route('/', methods=['POST', 'GET'])
+def hello_world():
+    return "Server is active"
 
 @APP.route('/clear_database', methods=['GET'])
 def clear_database():
@@ -59,6 +57,40 @@ def add_new_location_point():
 
     return handle_input(sound_sample, placeLabel, buildingLabel)
 
+@APP.route('/train_model', methods=['POST', 'GET'])
+def train_model():
+
+    data = database.get_json()
+
+    audio_samples = []
+    labels = []
+
+    for building in data:
+        for room in data[building]:
+            for i in range(len(data[building][room]['data'])):
+                # load the file and train model using data
+                _, audio_sample = wavfile.read(data[building][room]['data'][i])
+
+                audio_samples.append(audio_sample)
+                labels.append(data[building][room]['ID'])
+
+    # print(labels)
+    model.train(audio_samples, labels)
+
+    return "model trained"
+
+@APP.route('/classify', methods=['POST'])
+def classify():
+    list_of_records = request.data
+    dictionary = json.loads(list_of_records)
+
+    for key in dictionary:
+        dictionary[key] = [float(i) for i in dictionary[key].strip('][').split(', ')]
+
+    sound_sample = dictionary['1']
+
+    return model.predict(sound_sample)
+
 def handle_input(sound_sample, room, building):
     filtered_sample =  audioFilter.apply_high_pass_filter(sound_sample, 9000)
     # enveloped = audioFilter.smooth(audioFilter.envelope(filtered_sample))
@@ -74,37 +106,6 @@ def handle_input(sound_sample, room, building):
 
     print("added room!")
     return "Success"
-
-# @APP.route('/train_model_for_building')
-# def train_model_for_building():
-#     print("training model")
-#     buildingLabel = request.args.get("buildingLabel")
-#     model_to_train = request.args.get("modelToTrain")
-#     model_creator = ModelCreator()
-
-#     global cnnModel
-#     cnnModel = model_creator.trainModel(model_to_train, buildingLabel)
-#     return "Success"
-
-# @APP.route('/classify', methods=['POST'])
-# def clasify_room():
-#     print("predicting room....")
-#     #get the recorded audio
-#     data = json.loads(request.data)
-#     spectgramCreator = SpectogramCreator()
-
-#     data["recording"] = [int(i) for i in data["recording"].strip('][').split(', ')]
-
-#     print(len(data["recording"]))
-
-#     #convert data to spectogram, this is where is still goes wrong
-#     spectogram = spectgramCreator.createSpectogram("", data["recording"], "", 0)
-
-#     predicted_label = cnnModel.predict("my_first_model", spectogram)
-
-#     print("predicted label: " + predicted_label)
-
-#     return predicted_label
 
 def filename(building, room, ID):
     return datafolder + 'B(' + building + ')_R('+room+')_'+ID+'.png'

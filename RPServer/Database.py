@@ -23,9 +23,11 @@ class Database:
             file.writeframes(audio_data)
 
         if room not in self.json[building]:
-            self.json[building][room] = []
+            self.json[building][room] = {}
+            self.json[building][room]['data'] = []
+            self.json[building][room]['ID'] = random.randint(0,99999999)
 
-        self.json[building][room].append(filename)
+        self.json[building][room]['data'].append(filename)
 
         with open(self.jsonfile, 'w') as f:
             json.dump(self.json, f, indent=4)
@@ -39,5 +41,8 @@ class Database:
         for file in os.listdir('database\\'):
             if file.endswith('.png') or file.endswith('.wav'):
                 os.remove('database\\' + file)
+
+    def get_json(self):
+        return self.json
 
     

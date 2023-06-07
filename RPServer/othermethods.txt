@@ -11,3 +11,36 @@
     # spectogramCreator.generate_alternative_spectogram(output_signal, filename(building, room, "SPECTALT"))
 
     # spectogramCreator.generate_black_white_spectogram(filtered_sample, filename(building, room, "BW_SPECT"))
+
+
+
+# @APP.route('/train_model_for_building')
+# def train_model_for_building():
+#     print("training model")
+#     buildingLabel = request.args.get("buildingLabel")
+#     model_to_train = request.args.get("modelToTrain")
+#     model_creator = ModelCreator()
+
+#     global cnnModel
+#     cnnModel = model_creator.trainModel(model_to_train, buildingLabel)
+#     return "Success"
+
+# @APP.route('/classify', methods=['POST'])
+# def clasify_room():
+#     print("predicting room....")
+#     #get the recorded audio
+#     data = json.loads(request.data)
+#     spectgramCreator = SpectogramCreator()
+
+#     data["recording"] = [int(i) for i in data["recording"].strip('][').split(', ')]
+
+#     print(len(data["recording"]))
+
+#     #convert data to spectogram, this is where is still goes wrong
+#     spectogram = spectgramCreator.createSpectogram("", data["recording"], "", 0)
+
+#     predicted_label = cnnModel.predict("my_first_model", spectogram)
+
+#     print("predicted label: " + predicted_label)
+
+#     return predicted_label

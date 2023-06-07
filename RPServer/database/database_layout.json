@@ -1,14 +1,22 @@
 {
     "Thuis": {
-        "Desk": [
-            "database\\29053425.wav",
-            "database\\34396532.wav",
-            "database\\65951409.wav"
-        ],
-        "Room": [
-            "database\\83362865.wav",
-            "database\\90785505.wav",
-            "database\\76777478.wav"
+      "Desk": {
+        "ID": 0,
+        "data":
+        [
+          "database\\29053425.wav",
+          "database\\34396532.wav",
+          "database\\65951409.wav"
         ]
+      },
+      "Room": {
+        "ID": 1,
+        "data":
+        [
+          "database\\83362865.wav",
+          "database\\90785505.wav",
+          "database\\76777478.wav"
+        ]
+      }
     }
 }
