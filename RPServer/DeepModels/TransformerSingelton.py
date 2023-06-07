@@ -1,4 +1,4 @@
-class FNNSingelton:
+class TransformerSingelton:
     __instance = None
 
     def __new__(cls, *args, **kwargs):

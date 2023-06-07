@@ -1,38 +1,56 @@
 import random
-from keras import datasets, layers, models
-import firebaseConfig as firebase
+# from keras import datasets, layers, models
+from firebaseConfig import Firebase
 from DeepModels.CNNModel import CNNModel
 import tensorflow as tf
 import numpy as np
-
+import time
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from DeepModels.DBNModel import DBNModel
 from DeepModels.DNNModel import DNNModel
+from DeepModels.DTCModel import DTCModel
+from DeepModels.KNNModel import KNNModel
+from DeepModels.LinearClassificationModel import LinearClassificationModel
+from DeepModels.RNNModel import RNNModel
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+from DeepModels.SVMModel import SVMModel
 
 
 class ModelCreator:
-    '''
 
-    conv_pool_layers_info
-        [
-            {
-                "conv_filters":,
-                "conv_activation_func":,
-                "conv_layer_filter_size":,
-                "pool_layer_filter_size":,
-                "layer_num":
-            }
-        ]
-        dense_layers_info
-        [
-            {
-                "units":,
-                "activation_func":
-            }
-        ]
+    def testModel(self, spectrogram, modelToTrain):
+        if "cnn" in modelToTrain:
+            return self.test(spectrogram, modelToTrain, CNNModel())
 
-    '''
-    def trainModel(self, modelToTrain, building, model_name, model_info):
+        if "dnn" in modelToTrain:
+            return self.test(spectrogram, modelToTrain, DNNModel())
+
+        if "rnn" in modelToTrain:
+            return self.test(spectrogram, modelToTrain, RNNModel())
+
+        if "linearSVM" in modelToTrain:
+            return self.test(spectrogram, modelToTrain, LinearClassificationModel())
+
+        if "knn" in modelToTrain:
+            return self.test(spectrogram, modelToTrain, KNNModel())
+
+        if "sgd" in modelToTrain:
+            return self.test(spectrogram, modelToTrain, CNNModel())
+
+    def test(self, spectrogram, modelToTrain, model):
+        st = time.time()
+        model.predict(modelToTrain, spectrogram)
+        en = time.time()
+        print(str(en-st))
+        return en-st
+    def trainModel(self, modelToTrain, building, model_name, model_info, model_epochs, model_batches):
         # print(modelName)
-        data, labelsN = firebase.get_from_real_time_database(building)
+        data, labelsN = Firebase().getData(building)
         labels = [unit[0] for unit in data]
         map_label_encoding = {}
         value = 0
@@ -42,29 +60,158 @@ class ModelCreator:
                 value += 1
         spectrograms = [unit[1] for unit in data]
         encoded_labels = [map_label_encoding[label] for label in labels]
-
+        shuffled_list = self.shuffle(spectrograms, encoded_labels)
+        train_x = np.array([x[0] for x in shuffled_list])
+        train_y = np.array([x[1] for x in shuffled_list])
+        X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, train_size=0.8, shuffle=True,
+                                                            random_state=1)
         if modelToTrain == "cnn":
-            self.create_and_train_cnn(model_name, model_info, labelsN, spectrograms, encoded_labels)
+            self.create_and_train_cnn(model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                                      map_label_encoding.keys(), model_batches, building)
         if modelToTrain == "dnn":
-            self.create_and_train_dnn(model_name, model_info, labelsN, spectrograms, encoded_labels)
+            self.create_and_train_dnn(model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                                      map_label_encoding.keys(), model_batches, building)
+        if modelToTrain == "rnn":
+            self.create_and_train_rnn(model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                                      map_label_encoding.keys(), model_batches, building)
+        if modelToTrain == "dbn":
+            self.create_and_train_dbn(model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                                      map_label_encoding.keys(), model_batches)
+        if modelToTrain == "linearSVM":
+            self.create_and_train_ml_model("linearSVM", SVMModel(), model_info, X_train, X_test, y_train, y_test,
+                                           building, map_label_encoding.keys())
+        if modelToTrain == "dtc":
+            self.create_and_train_ml_model("dtc", DTCModel(), model_info, X_train, X_test, y_train, y_test, building,
+                                           map_label_encoding.keys())
+        if modelToTrain == "knn":
+            self.create_and_train_ml_model("knn", KNNModel(), model_info, X_train, X_test, y_train, y_test, building,
+                                           map_label_encoding.keys())
+        if modelToTrain == "sgd":
+            self.create_and_train_ml_model("sgd", LinearClassificationModel(), model_info, X_train, X_test, y_train,
+                                           y_test, building, map_label_encoding.keys())
 
-    def create_and_train_cnn(self, model_name, model_info, labelsN, spectrograms, encoded_labels):
+    def create_and_train_ml_model(self, model_name, model, model_info, X_train, X_test, y_train, y_test, building,
+                                  labels):
+        date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
+        model_name += date + "_" + building
+
+        X_train = [np.array(array).flatten() for array in X_train]
+        X_test = [np.array(array).flatten() for array in X_test]
+
+        model_name = model.create_new_model(model_name, model_info)
+        _, time = model.train(model_name, np.array(X_train), y_train)
+        y_pred = model.predict(model_name, np.array(X_test))
+        acc = model.evaluate(model_name, np.array(X_test), y_test)
+        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, 0, time)
+
+    def create_and_train_cnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                             labels, model_batches, building):
         cnn_model = CNNModel()
-        conv_pool_layers_info = []
-        dense_layers_info = []
+        model_name = ""
+        conv_pool_layers_info = self.layers_creator("conv_layers", model_info)
+        dense_layers_info = self.layers_creator("dense_layers", model_info)
 
-        conv_layers = model_info["conv_layers"]
-        for layer in conv_layers:
-            conv_pool_layers_info.append(layer)
+        model_name += "conv_"
+        for layer in conv_pool_layers_info:
+            model_name += str(layer["conv_filters"]) + "_"
 
-        dense_layers = model_info["dense_layers"]
-        for layer in dense_layers:
-            dense_layers_info.append(layer)
+        model_name += "dense_"
+        for layer in dense_layers_info:
+            model_name += str(layer["units"]) + "_"
+        date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
+        model_name += date + "_" + building
 
-        dense_layers_info.append({
-            "units": labelsN,
-            "activation_func": 'relu'
-        })
+        params = cnn_model.create_new_model(model_name, conv_pool_layers_info, dense_layers_info, labels_num=labelsN,
+                                            input_shape=(5, 32, 1))
+        self.execute_model_train_and_prediction(cnn_model, model_name, X_train, y_train, X_test, y_test,
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
+
+    def create_and_train_dnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                             labels, model_batches, building):
+        dnn_model = DNNModel()
+
+        dense_layers_info = self.layers_creator("dense_layers", model_info)
+        model_name = ""
+        model_name += "dense_"
+        for layer in dense_layers_info:
+            model_name += str(layer["units"]) + "_"
+        date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
+        model_name += date + "_" + building
+
+        params = dnn_model.create_new_model(model_name, dense_layers_info, labelsN)
+        self.execute_model_train_and_prediction(dnn_model, model_name, X_train, y_train, X_test, y_test,
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
+
+    def create_and_train_rnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
+                             labels, model_batches, building):
+        rnn_model = RNNModel()
+
+        lstm_layers_info = model_info["lstm_units"]
+        dense_layers_info = self.layers_creator("dense_layers", model_info)
+        model_name = ""
+        model_name += "lstm_"
+        for layer in lstm_layers_info:
+            model_name += str(layer) + "_"
+
+        model_name += "dense_"
+        for layer in dense_layers_info:
+            model_name += str(layer["units"]) + "_"
+        date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
+        model_name += date + "_" + building
+        params = rnn_model.create_new_model(model_name, dense_layers_info, units=lstm_layers_info, labels_num=labelsN,
+                                            input_shape=(5, 32))
+        self.execute_model_train_and_prediction(rnn_model, model_name, X_train, y_train, X_test, y_test,
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
+
+    def create_and_train_dbn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, labels):
+        dbn_model = DBNModel()
+
+        dbn_model.create_new_model(
+            model_name,
+            model_info["hidden_layers_structure"],
+            model_info["learning_rate_rbm"],
+            model_info["learning_rate"],
+            model_info["n_epochs_rbm"],
+            model_info["n_iter_backprop"],
+            model_info["batch_size"],
+            model_info["activation_function"],
+            model_info["dropout_p"],
+        )
+
+        dbn_model.train(
+            model_name,
+            X_train,
+            y_train
+        )
+
+    def layers_creator(self, name, model_info):
+        layers_info = []
+        layers = model_info[name]
+        for layer in layers:
+            layers_info.append(layer)
+        return layers_info
+
+    def execute_model_train_and_prediction(self, model, model_name, X_train, y_train, X_test, y_test, labels, params, epochs=20,
+                                           model_batches=32):
+        _, _, time = model.train(
+            model_name,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            epochs=epochs,
+            batch_size=model_batches
+        )
+        results = model.predict(model_name, X_test)
+        # print(results)
+        # print(np.array(results).size)
+        y_pred = [np.argmax(x) for x in results]
+        acc = accuracy_score(y_test, y_pred)
+        print(acc)
+        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60)
+
+    def shuffle(self, spectrograms, encoded_labels):
+
         to_shuffle = []
         for i in range(len(encoded_labels)):
             to_shuffle.append((spectrograms[i], encoded_labels[i]))
@@ -72,58 +219,25 @@ class ModelCreator:
         shuffled_list = []
         for i in range(10000):
             shuffled_list = random.sample(to_shuffle, k=len(to_shuffle))
-        print(labelsN)
 
-        # self.tensorflow_dummy_example(
-        #     [x[0] for x in shuffled_list],
-        #     [x[0] for x in shuffled_list],
-        #     [x[1] for x in shuffled_list],
-        #     [x[1] for x in shuffled_list]
-        # )
+        return shuffled_list
 
-        cnn_model.create_new_model(model_name, conv_pool_layers_info, dense_layers_info, labels_num=labelsN, input_shape=(5, 32, 1))
-        cnn_model.train(
-            model_name,
-            [x[0] for x in shuffled_list][:300],
-            [x[1] for x in shuffled_list][:300],
-            20,
-            [x[0] for x in shuffled_list][300:],
-            [x[1] for x in shuffled_list][300:]
-        )
+    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time):
+        cm = confusion_matrix(y_act, y_pred)
+        fig = plt.figure(figsize=(16, 14))
+        ax = plt.subplot()
+        sns.heatmap(cm, annot=True, ax=ax, fmt='g');  # annot=True to annotate cells
+        # labels, title and ticks
+        ax.set_xlabel('Predicted', fontsize=20)
+        ax.xaxis.set_label_position('bottom')
+        plt.xticks(rotation=90)
+        ax.xaxis.set_ticklabels(class_names, fontsize=10)
+        ax.xaxis.tick_bottom()
 
-    def tensorflow_dummy_example(self, train_images, test_images, train_labels, test_labels):
-        # (train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
-        # train_images, test_images = train_images / 255.0, test_images / 255.0
-        model = models.Sequential()
-        model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(5, 32, 1)))
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-        model.summary()
-        model.add(layers.Flatten())
-        model.add(layers.Dense(64, activation='relu'))
-        model.add(layers.Dense(10))
-        model.compile(optimizer='adam',
-                      loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                      metrics=['accuracy'])
+        ax.set_ylabel('True', fontsize=20)
+        ax.yaxis.set_ticklabels(class_names, fontsize=10)
+        plt.yticks(rotation=0)
+        name += "_"+str(params)+"_"+str(round(time,2))
+        plt.title(name, fontsize=20)
 
-        history = model.fit(train_images, train_labels, epochs=10,
-                            validation_data=(test_images, test_labels))
-
-    def create_and_train_dnn(self, model_name, model_info, labelsN, spectrograms, encoded_labels):
-        dnn_model = DNNModel()
-        dense_layers_info = []
-
-        dense_layers = model_info["dense_layers"]
-        for layer in dense_layers:
-            dense_layers_info.append(layer)
-
-        dense_layers_info.append({
-            "units": labelsN,
-            "activation_func": 'relu'
-        })
-
-        dnn_model.create_new_model(model_name, dense_layers)
-        dnn_model.train(model_name, tf.stack(spectrograms), tf.stack(encoded_labels), 20)
-
+        plt.savefig("confusion_matrices/" + name + ".png")

@@ -3,18 +3,18 @@ package com.example.myapplication.RequestCallbacks;
 import android.util.Log;
 
 import com.example.myapplication.ModelName;
+import com.example.myapplication.ResponseTimes;
 
 import org.chromium.net.CronetException;
 import org.chromium.net.UrlRequest;
 import org.chromium.net.UrlResponseInfo;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
-public class MyUrlRequestCallback extends UrlRequest.Callback {
+public class TestUrlRequestCallback extends UrlRequest.Callback{
     private static final String TAG = "MyUrlRequestCallback";
     private StringBuilder responseData = new StringBuilder();
 
@@ -66,13 +66,11 @@ public class MyUrlRequestCallback extends UrlRequest.Callback {
     @Override
     public void onSucceeded(UrlRequest request, UrlResponseInfo info) {
 //        Log.i(TAG, "onSucceeded method called.");
-
-        List<String> responseBody = Arrays.asList(responseData.toString()
-                .replace("[", "")
-                .replace("]", "")
-                .split(","));
-//        Log.i(TAG, responseBody);
-        ModelName.modelNames = responseBody;
+        long endTime = System.currentTimeMillis();
+        long responseTime = endTime - ResponseTimes.startTime;
+        ResponseTimes.requestResponseTime.add((float) (responseTime/1000));
+        float response = Float.parseFloat(responseData.toString());
+        ResponseTimes.backendResponseTime.add(response);
     }
 
     @Override
@@ -85,5 +83,4 @@ public class MyUrlRequestCallback extends UrlRequest.Callback {
     public void onCanceled(UrlRequest request, UrlResponseInfo info) {
         // Free resources allocated to process this request.
     }
-
 }
