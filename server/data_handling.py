@@ -6,6 +6,7 @@ from database import LocalDatabase
 from acoustic_classifier import AcousticClassifier
 from sklearn.model_selection import train_test_split
 from wifi_classifier import WifiClassifier
+from sklearn.metrics import accuracy_score
 import cv2
 import numpy as np
 import matplotlib
@@ -14,6 +15,7 @@ import time
 import constants
 import os
 import json
+from combined_classifier import weighted_average, two_step_localization
  
 
 matplotlib.use('Agg')
@@ -160,7 +162,7 @@ def create_wifi_training_set(wifi_list, building_label, room_label):
         with open(training_set_directory + "/" + str(count) +"-" + classify_date + ".json", "w") as outfile:
             outfile.write(json_object)
         count = 1 + count
-from sklearn.metrics import accuracy_score
+
 def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
     wifi_zip = list(zip(wifi_test, wifi_label))
     wifi_zip.sort(key=lambda x: x[1])
@@ -169,7 +171,6 @@ def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
 
 
     bins = np.bincount(wifi_label)
-    print(bins)
 
     acoustic_combined = []
     wifi_combined = []
@@ -184,16 +185,20 @@ def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
     new_acoustic_test = np.asarray([a[0] for a in acoustic_combined])
     new_acoustic_label = np.asarray([a[1] for a in acoustic_combined])
 
-
-    wifi_pred = wifi_model.classify(new_wifi_test)
-    print(accuracy_score(new_wifi_label, wifi_pred))
-    print(acoustic_model.test_accuracy(new_acoustic_test, new_acoustic_label))
+    wifi_accuracy = wifi_model.test_accuracy(new_wifi_test,new_wifi_label)
+    acoustic_accuracy = acoustic_model.test_accuracy(new_acoustic_test, new_acoustic_label)
+    weighted_accuracy = weighted_average(acoustic_model, wifi_model, new_acoustic_test, new_wifi_test, new_wifi_label)
+    two_step_accuracy = two_step_localization(acoustic_model, wifi_model, new_acoustic_test, new_wifi_test, new_wifi_label)
+    print("WIFI MODEL ACCURACY: " + str(wifi_accuracy))
+    print("ACOUSTIC MODEL ACCURACY: " + str(acoustic_accuracy))
+    print("WEIGHTED AVERAGE ACCURACY: " + str(weighted_accuracy))
+    print("TWO STEP LOCALIZATION ACCURACY: " + str(two_step_accuracy))
 
 def train_classifiers(test_split=0.2): 
     images, image_labels, image_int_to_label = db.get_acoustic_training_set()
     wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
     room_amount = db.get_room_amount()
-    acoustic_dataset = train_test_split(images, image_labels, test_size=test_split, random_state=42)
+    acoustic_dataset = train_test_split(images, image_labels, test_size=0.8, random_state=42)
     wifi_dataset = train_test_split(wifis, wifi_labels, test_size=test_split, random_state=42)
     acoustic_model.train(acoustic_dataset, image_int_to_label, room_amount)
     wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount)

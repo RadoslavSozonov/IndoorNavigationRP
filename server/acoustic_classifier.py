@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 
 from tensorflow.keras import datasets, layers, models
 from threading import Lock
+from utils import create_confusion_matrix
+from sklearn.metrics import accuracy_score
 
 class AcousticClassifier:
     def __init__(self):
@@ -76,7 +78,7 @@ class AcousticClassifier:
             # print("test set size: " + str(np.size(images_test)))
 
             # train the model
-            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=200, 
+            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=10, 
                         validation_data=(images_test, tf.keras.utils.to_categorical(labels_test, room_amount)))
 
             
@@ -99,15 +101,30 @@ class AcousticClassifier:
             self.model.save('./models/' + filename)
 
     def test_accuracy(self, test_images, test_labels):
-        test_loss, test_acc = self.model.evaluate(test_images,  tf.keras.utils.to_categorical(test_labels, 14), verbose=2)
-        return test_acc
+        # test_loss, test_acc = self.model.evaluate(test_images,  tf.keras.utils.to_categorical(test_labels, 14), verbose=2)
+        acoustic_predictions = []
+        for i, acoustic_sample in enumerate(test_images):
+            x = self.get_predictions(acoustic_sample)
+            acoustic_predictions.append(np.argmax(x))
+        create_confusion_matrix(test_labels, acoustic_predictions, np.asarray(self.int_to_label), "./metadata/accuracy/acoustic_confusion_matrix.png")
+        accuracy = accuracy_score(test_labels, acoustic_predictions)
+        return accuracy
     def load_model(self, filename):
         with self.training_lock:
             self.model = models.load_model('./models/' + filename)
 
+    def get_predictions(self, sample):
+        with self.training_lock:
+            if self.model_trained:
+                return self.model.predict(np.array([sample,]))
+            else:
+                return "Model is not trained yet"
+    def get_int_to_label(self):
+        return self.int_to_label
     def classify(self, sample):
         with self.training_lock:
             if self.model_trained:
+                
                 weights = self.model.predict(np.array([sample,]))
                 print(weights)
                 print(self.int_to_label)
