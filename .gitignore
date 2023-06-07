@@ -1,3 +1,7 @@
 __pycache__
 key.json
 .idea
+*.jpg
+*.wav
+*.h5
+*.pickle

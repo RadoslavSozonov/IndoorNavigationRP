@@ -59,16 +59,6 @@ def add_room():
     room_label = room_data['room_label']
     building_label = room_data['building_label']
     room_audio = room_data['audio']
-
-    # update_time, doc_ref = db.collection(building_label).add({})
-    # data = {
-    #     u'building': building_label,
-    #     u'room': room_label,
-    #     u'audio': "Currently stored locally",
-    #     u'uuid': doc_ref.id
-    # }
-    #
-    # doc_ref.update(data)
     chirp_sample_offset = 0
     counter = 0
     np_arr = np.asarray(room_audio, dtype=np.int16)
