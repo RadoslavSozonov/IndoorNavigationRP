@@ -3,22 +3,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from tensorflow.keras import datasets, layers, models
-from sklearn.model_selection import train_test_split
-from database import LocalDatabase
 from threading import Lock
 
 class AcousticClassifier:
     def __init__(self):
-        self.db = LocalDatabase()
         self.int_to_label = []
         self.model = None
         self.training_lock = Lock()
         self.model_trained = False
 
-    def train(self, test_split=0.8):
+    def train(self, dataset, int_to_label, room_amount):
         # setup the model
         with self.training_lock:
-            room_amount = self.db.get_room_amount()
             self.model = models.Sequential()
             self.model.add(
                         layers.Conv2D(
@@ -71,39 +67,40 @@ class AcousticClassifier:
             self.model.summary()
             print("room amount: " + str(room_amount))
 
-            
             # Split the data into training and test set
-            images, labels, int_to_label = self.db.get_training_set()
-            self.int_to_label = int_to_label
-            images_train, images_test, labels_train, labels_test = train_test_split(images, labels, test_size=test_split, random_state=42)
 
-            print("training set size: " + str(np.size(images_train)))
-            print("test set size: " + str(np.size(images_test)))
+            self.int_to_label = int_to_label
+            images_train, images_test, labels_train, labels_test = dataset
+
+            # print("training set size: " + str(np.size(images_train)))
+            # print("test set size: " + str(np.size(images_test)))
 
             # train the model
             history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=200, 
                         validation_data=(images_test, tf.keras.utils.to_categorical(labels_test, room_amount)))
 
             
-            plt.plot(history.history['accuracy'], label='accuracy')
-            plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
-            plt.xlabel('Epoch')
-            plt.ylabel('Accuracy')
-            plt.ylim([0.5, 1])
-            plt.legend(loc='lower right')
+            # plt.plot(history.history['accuracy'], label='accuracy')
+            # plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
+            # plt.xlabel('Epoch')
+            # plt.ylabel('Accuracy')
+            # plt.ylim([0.5, 1])
+            # plt.legend(loc='lower right')
 
-            plt.savefig("./metadata/current_model_accuracy.png")
+            # plt.savefig("./metadata/current_model_accuracy.png")
 
-            # Clear the plot
-            plt.clf()
+            # # Clear the plot
+            # plt.clf()
 
             self.model_trained = True
-
 
     def save_model(self, filename):
         with self.training_lock:
             self.model.save('./models/' + filename)
 
+    def test_accuracy(self, test_images, test_labels):
+        test_loss, test_acc = self.model.evaluate(test_images,  tf.keras.utils.to_categorical(test_labels, 14), verbose=2)
+        return test_acc
     def load_model(self, filename):
         with self.training_lock:
             self.model = models.load_model('./models/' + filename)

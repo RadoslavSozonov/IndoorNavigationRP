@@ -53,6 +53,16 @@ public class LabelWindow extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.popup_label);
 
+
+        // Get layout components
+        TextView room_label = (TextView) findViewById(R.id.label_of_room);
+        TextView building_label = (TextView) findViewById(R.id.label_of_building);
+        TextView sent_label = (TextView) findViewById(R.id.sent_label);
+        Button button_start = (Button) findViewById(R.id.button_submit);
+        Button button_train = (Button) findViewById(R.id.button_train);
+        TextView progress = (TextView) findViewById(R.id.textView4);
+
+
 //        WifiRttManager wifiRttManager = (WifiRttManager) getSystemService(Context.WIFI_RTT_RANGING_SERVICE);
 //        System.out.println(this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_RTT));
 
@@ -102,13 +112,7 @@ public class LabelWindow extends Activity {
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         this.registerReceiver(wifiScanReceiver, intentFilter);
 
-        // Get layout components
-        TextView room_label = (TextView) findViewById(R.id.label_of_room);
-        TextView building_label = (TextView) findViewById(R.id.label_of_building);
-        TextView sent_label = (TextView) findViewById(R.id.sent_label);
-        Button button_start = (Button) findViewById(R.id.button_submit);
-        Button button_train = (Button) findViewById(R.id.button_train);
-        TextView progress = (TextView) findViewById(R.id.textView4);
+
 
         // get server IP
         Intent intent = getIntent();
@@ -134,6 +138,36 @@ public class LabelWindow extends Activity {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
+
+                            // Collect WiFi Data
+                            for (int i = 0; i < Globals.REPEAT_WIFI; i++) {
+                                waitingForScan = true;
+                                final int counter = i;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        progress.setText(String.valueOf(counter) + "/" + String.valueOf(Globals.REPEAT_WIFI));  // THIS LINE CRASHES THE PROGRAM
+                                    }
+                                });
+                                boolean success = wifiManager.startScan();
+                                if (!success) {
+                                    // scan failure handling
+                                    System.out.println("No success here :(");
+                                }
+                                while(waitingForScan);
+                                try {
+                                    Thread.sleep(Globals.THROTTLE_WIFI_MS);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progress.setText("emitting chirps...");  // THIS LINE CRASHES THE PROGRAM
+                                }
+                            });
                             AudioRecord audioRecord = createAudioRecord();
                             int buffer_size = (int) (Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP);
                             short[] buffer = new short[buffer_size];
@@ -162,25 +196,12 @@ public class LabelWindow extends Activity {
                             listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
                             audioRecord.stop();
                             audioRecord.release();
-
-
-                            // Collect WiFi Data
-                            for (int i = 0; i < Globals.REPEAT_WIFI; i++) {
-                                waitingForScan = true;
-//                                System.out.println(i);
-                                boolean success = wifiManager.startScan();
-                                if (!success) {
-                                    // scan failure handling
-                                    System.out.println("No success here :(");
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progress.setText("processing...");  // THIS LINE CRASHES THE PROGRAM
                                 }
-                                while(waitingForScan);
-                                try {
-                                    Thread.sleep(Globals.THROTTLE_WIFI_MS);
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-
+                            });
                             new Thread(() -> {
                                 ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim(), wifi_list), server_ip);
                                 training = false;
@@ -224,6 +245,7 @@ public class LabelWindow extends Activity {
         int height = displayMetrics.heightPixels;
 
         getWindow().setLayout((int) (width * 0.8), (int) (height * 0.8));
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
         layoutParams.dimAmount = 0.35f;

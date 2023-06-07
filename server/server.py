@@ -1,7 +1,5 @@
 from flask import Flask, request 
-from database import LocalDatabase
-from data_handling import find_first_chirp, create_spectrogram, create_training_set, create_single_echo, create_wifi_training_set
-from acoustic_classifier import AcousticClassifier
+from data_handling import find_first_chirp, create_spectrogram, create_training_set, create_wifi_training_set, train_classifiers, get_rooms_from_db
 from scipy.io.wavfile import write
 from scipy.io.wavfile import write
 from scipy.signal import spectrogram
@@ -19,18 +17,18 @@ matplotlib.use('Agg')
 
 
 APP = Flask(__name__)
-db = LocalDatabase()
-acoustic_model = AcousticClassifier()
+
+
 
 
 @APP.route('/get_rooms', methods=['GET'])
 def get_rooms():
-    return db.get_buildings_with_rooms()
+    return get_rooms_from_db()
 
 
 @APP.route('/train', methods=['GET'])
 def train_model():
-    acoustic_model.train(0.8)
+    train_classifiers()
     return "Done!"
 
 
@@ -63,10 +61,7 @@ def recognize_room():
     np_arr = np.asarray(room_audio, dtype=np.int16)
     np_arr = np_arr[0, int(constants.chirp_first_error * constants.interval_samples): int((constants.recognize_chirp_amount - constants.chirp_last_error) * constants.interval_samples)]
     
-    filename = create_single_echo(np_arr)
-    time.sleep(0.1)
-    result = acoustic_model.classify(db.get_grayscale_image(filename))
-    return result
+    return classify_single_echo(np_arr)
 
 if __name__ == '__main__':
     APP.run(host='0.0.0.0', debug=True)
