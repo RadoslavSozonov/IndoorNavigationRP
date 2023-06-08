@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private String rooms = "";
 
     private boolean useStaticIp = true;
-    private String server_ip = "145.94.211.247";
+    private String server_ip = "145.94.238.95";
 
     private Activity activity = this;
     @Override
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
 //                }
                 short[] audioData = loadAudioData(filePath);
                 System.out.println("Data collected");
-                ServerCommunicationCronetEngine.getNameOfModel(activity, "145.94.211.247");
+                ServerCommunicationCronetEngine.getNameOfModel(activity, "145.94.238.95");
                 while (ModelName.modelNames.size() == 0){
                     continue;
                 }
@@ -140,64 +140,64 @@ public class MainActivity extends AppCompatActivity {
             public short[] loadAudioData(String name){
 //                InputStream inputStream = new
 
-                Resources resources = getResources();
-                InputStream iS;
-                Field[] fields=R.raw.class.getFields();
-                for(int i = 0; i<fields.length;i++){
-                    System.out.println(fields[i].getName());
-                    int rID = 0;
-                    try {
-                        rID = fields[i].getInt(fields[i]);
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
-                    }
-                    //get the file as a stream
-                    iS = resources.openRawResource(rID);
-
-                    //create a buffer that has the same size as the InputStream
-                    byte[] buffer = new byte[0];
-                    try {
-                        buffer = new byte[iS.available()];
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    //read the text file as a stream, into the buffer
-                    try {
-                        iS.read(buffer);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    //create a output stream to write the buffer into
-                    ByteArrayOutputStream oS = new ByteArrayOutputStream();
-                    //write this buffer to the output stream
-                    try {
-                        oS.write(buffer);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    //Close the Input and Output streams
-                    try {
-                        oS.close();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    try {
-                        iS.close();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    //return the output stream as a String
-                    String output = oS.toString();
-                    String[] numbers = output.split("\n");
-                    short[] shorts = new short[numbers.length];
-                    for(int j = 0; j<numbers.length; j++){
-                        String number = numbers[j].replace("\r", "");
-                        short shortNum = Short.parseShort(number);
-                        shorts[j] = shortNum;
-                    }
-                    return shorts;
-                }
+//                Resources resources = getResources();
+//                InputStream iS;
+//                Field[] fields=R.raw.class.getFields();
+//                for(int i = 0; i<fields.length;i++){
+//                    System.out.println(fields[i].getName());
+//                    int rID = 0;
+//                    try {
+//                        rID = fields[i].getInt(fields[i]);
+//                    } catch (IllegalAccessException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    //get the file as a stream
+//                    iS = resources.openRawResource(rID);
+//
+//                    //create a buffer that has the same size as the InputStream
+//                    byte[] buffer = new byte[0];
+//                    try {
+//                        buffer = new byte[iS.available()];
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    //read the text file as a stream, into the buffer
+//                    try {
+//                        iS.read(buffer);
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    //create a output stream to write the buffer into
+//                    ByteArrayOutputStream oS = new ByteArrayOutputStream();
+//                    //write this buffer to the output stream
+//                    try {
+//                        oS.write(buffer);
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    //Close the Input and Output streams
+//                    try {
+//                        oS.close();
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                    try {
+//                        iS.close();
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//
+//                    //return the output stream as a String
+//                    String output = oS.toString();
+//                    String[] numbers = output.split("\n");
+//                    short[] shorts = new short[numbers.length];
+//                    for(int j = 0; j<numbers.length; j++){
+//                        String number = numbers[j].replace("\r", "");
+//                        short shortNum = Short.parseShort(number);
+//                        shorts[j] = shortNum;
+//                    }
+//                    return shorts;
+//                }
 
 //                short[] data = new short[4410*504];
 //                for(int i=0; i<4410*504; i++){

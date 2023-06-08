@@ -9,7 +9,6 @@ from scipy.signal import spectrogram
 from scipy.signal.windows import hann
 from scipy.io.wavfile import write
 from DeepModels.CNNModel import CNNModel
-from DeepModels.DBNModel import DBNModel
 from DeepModels.DNNModel import DNNModel
 from DeepModels.KNNModel import KNNModel
 from DeepModels.LinearClassificationModel import LinearClassificationModel

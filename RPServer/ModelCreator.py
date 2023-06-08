@@ -7,7 +7,6 @@ import numpy as np
 import time
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from DeepModels.DBNModel import DBNModel
 from DeepModels.DNNModel import DNNModel
 from DeepModels.DTCModel import DTCModel
 from DeepModels.KNNModel import KNNModel
