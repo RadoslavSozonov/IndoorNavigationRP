@@ -2,10 +2,9 @@ package com.example.myapplication.AudioTrack;
 
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
 
-import com.example.myapplication.Globals;
+import com.example.myapplication.models.Globals;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;

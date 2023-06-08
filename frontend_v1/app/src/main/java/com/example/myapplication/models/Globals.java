@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.models;
 
 public class Globals {
     public static final int CHIRP_FREQUENCY = 20000;

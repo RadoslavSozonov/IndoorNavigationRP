@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import com.example.myapplication.models.Room;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -12,7 +13,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 

@@ -22,6 +22,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.myapplication.models.Data;
+import com.example.myapplication.models.DataSet;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -139,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
             public short[] loadAudioData(String name){
 //                InputStream inputStream = new
-
+                DataSet dataList = new DataSet();
                 Resources resources = getResources();
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
@@ -156,32 +159,16 @@ public class MainActivity extends AppCompatActivity {
 
                     //create a buffer that has the same size as the InputStream
                     byte[] buffer = new byte[0];
-                    try {
-                        buffer = new byte[iS.available()];
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    //read the text file as a stream, into the buffer
-                    try {
-                        iS.read(buffer);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
                     //create a output stream to write the buffer into
                     ByteArrayOutputStream oS = new ByteArrayOutputStream();
-                    //write this buffer to the output stream
                     try {
+                        buffer = new byte[iS.available()];
+
+                        //read the text file as a stream, into the buffer
+                        iS.read(buffer);
+                        //write this buffer to the output stream
                         oS.write(buffer);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    //Close the Input and Output streams
-                    try {
                         oS.close();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    try {
                         iS.close();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
@@ -196,7 +183,10 @@ public class MainActivity extends AppCompatActivity {
                         short shortNum = Short.parseShort(number);
                         shorts[j] = shortNum;
                     }
-                    return shorts;
+                    Data data = new Data("Ewi", "A");
+                    data.addData(shorts);
+                    dataList.addData(data);
+
                 }
 
 //                short[] data = new short[4410*504];
