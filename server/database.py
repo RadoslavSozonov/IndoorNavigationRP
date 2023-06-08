@@ -23,7 +23,7 @@ class LocalDatabase:
         grey = np.asarray(grey)
         return grey
 
-    def get_acoustic_training_set(self, time="night"):
+    def get_acoustic_training_set(self, time=""):
         images = []
         labels = []
         int_to_label = []
@@ -50,7 +50,8 @@ class LocalDatabase:
         return (images, labels, int_to_label)
 
 
-    def create_wifi_fingerprint(self, wifi_list, wifi_unique_BSSID):
+    def create_wifi_fingerprint(self, wifi_list, time=""):
+        wifi_unique_BSSID = self.get_unique_wifi_BSSID(time)
         # print("wifi unique size:" + str(len(wifi_unique_BSSID)))
         # print("wifi list size:" + str(len(wifi_list)))
 
@@ -60,7 +61,7 @@ class LocalDatabase:
             BSSID = wifi_unique_BSSID[i]
             np_arr[i] = next((x["level"] for x in wifi_list if x["BSSID"] == BSSID), 0)
         return np_arr
-    def get_unique_wifi_BSSID(self, time="night"):
+    def get_unique_wifi_BSSID(self, time=""):
         wifi_BSSID = []
         for building_label in next(os.walk('./wifi'))[1]:
             for room_label in next(os.walk('./wifi/' + building_label))[1]:
@@ -78,12 +79,12 @@ class LocalDatabase:
         
         return unique(wifi_BSSID)
 
-    def get_wifi_training_set(self, time="night"):
+    def get_wifi_training_set(self, time=""):
         wifi_fingerprints = []
         labels = []
         int_to_label = []
         count = 0
-        wifi_unique_BSSID = self.get_unique_wifi_BSSID()
+
 
         for building_label in next(os.walk('./wifi'))[1]:
             for room_label in next(os.walk('./wifi/' + building_label))[1]:
@@ -94,10 +95,9 @@ class LocalDatabase:
                         if os.path.isfile(os.path.join(full_path, file)))
                 for sample in files:
                     with open(full_path + '/' +sample, 'r') as openfile:
-                    
                         # Reading from json file
                         wifi_list = json.load(openfile)
-                        wifi_fingerprint = self.create_wifi_fingerprint(wifi_list["list"], wifi_unique_BSSID)
+                        wifi_fingerprint = self.create_wifi_fingerprint(wifi_list["list"])
                         wifi_fingerprints.append(wifi_fingerprint)
                         labels.append(count)
                 int_to_label.append(full_label)

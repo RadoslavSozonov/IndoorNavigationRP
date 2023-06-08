@@ -15,7 +15,8 @@ import time
 import constants
 import os
 import json
-from combined_classifier import weighted_average, two_step_localization
+from sorcery import dict_of
+from combined_classifier import weighted_average, two_step, wifi_top_k, weighted_average_test_accuracy, two_step_test_accuracy, wifi_top_k_test_accuracy
  
 
 matplotlib.use('Agg')
@@ -92,7 +93,10 @@ def create_spectrogram(array, filename):
     cv2.imwrite(filename, not_rgb)
 
 
-def classify_single_echo(np_arr):
+def multi_classify(np_arr, wifi_list):
+    if acoustic_model.model_trained == False:
+        train_classifiers()
+    int_to_label = wifi_model.get_int_to_label()
     today = datetime.now()
     classify_date = today.strftime("%b-%d-%Y-%H-%M-%S")
     meta_data_directory = './metadata/classify/'+ ""
@@ -107,8 +111,22 @@ def classify_single_echo(np_arr):
 
     create_spectrogram(np_arr, filename)
     time.sleep(0.1)
-
-    return acoustic_model.classify(db.get_grayscale_image(filename))
+    
+    acoustic_sample = db.get_grayscale_image(filename)
+    wifi_sample = db.create_wifi_fingerprint(wifi_list)
+    acoustic_prediction = [acoustic_model.classify(acoustic_sample)]
+    wifi_prediction = [wifi_model.classify(wifi_sample)]
+    weighted_average_prediction = [int_to_label[weighted_average(acoustic_model, wifi_model, constants.acoustic_weight, acoustic_sample, wifi_sample)]]
+    two_step_prediction = [int_to_label[two_step(acoustic_model, wifi_model, constants.top_k, acoustic_sample, wifi_sample)]]
+    wifi_top_k_prediction = int_to_label[wifi_top_k(wifi_model, constants.top_k, wifi_sample)].tolist()
+    prediction_object = dict_of(
+        acoustic_prediction,
+        wifi_prediction,
+        weighted_average_prediction,
+        two_step_prediction,
+        wifi_top_k_prediction
+    )
+    return prediction_object
 
 
 def create_training_set(np_arr, building_label, room_label, save_audio=True):
@@ -172,6 +190,7 @@ def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
 
     bins = np.bincount(wifi_label)
 
+
     acoustic_combined = []
     wifi_combined = []
     for i in range(len(bins)):
@@ -187,28 +206,25 @@ def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
 
     wifi_accuracy = wifi_model.test_accuracy(new_wifi_test,new_wifi_label)
     acoustic_accuracy = acoustic_model.test_accuracy(new_acoustic_test, new_acoustic_label)
-    weighted_accuracy = weighted_average(acoustic_model, wifi_model, new_acoustic_test, new_wifi_test, new_wifi_label)
-    two_step_accuracy = two_step_localization(acoustic_model, wifi_model, new_acoustic_test, new_wifi_test, new_wifi_label)
+    weighted_accuracy = weighted_average_test_accuracy(acoustic_model, wifi_model, constants.acoustic_weight, new_acoustic_test, new_wifi_test, new_wifi_label)
+    two_step_accuracy = two_step_test_accuracy(acoustic_model, wifi_model, constants.top_k, new_acoustic_test, new_wifi_test, new_wifi_label)
+    top_k_accuracy = wifi_top_k_test_accuracy(wifi_model, constants.top_k, new_wifi_test, new_wifi_label)
     print("WIFI MODEL ACCURACY: " + str(wifi_accuracy))
     print("ACOUSTIC MODEL ACCURACY: " + str(acoustic_accuracy))
     print("WEIGHTED AVERAGE ACCURACY: " + str(weighted_accuracy))
     print("TWO STEP LOCALIZATION ACCURACY: " + str(two_step_accuracy))
+    print("TOP K ACCURACY: " + str(top_k_accuracy))
 
 def train_classifiers(test_split=0.2): 
     room_amount = db.get_room_amount()
 
     images, image_labels, image_int_to_label = db.get_acoustic_training_set()
     wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
-    acoustic_dataset = train_test_split(images, image_labels, test_size=test_split, random_state=42)
-    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=test_split, random_state=42)
+    acoustic_dataset = train_test_split(images, image_labels, test_size=0.2, random_state=42)
+    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=0.7, random_state=42)
 
     acoustic_model.train(acoustic_dataset, image_int_to_label, room_amount)
     wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount)
-
-    images, image_labels, image_int_to_label = db.get_acoustic_training_set()
-    wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
-    acoustic_dataset = train_test_split(images, image_labels, test_size=0.9, random_state=42)
-    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=0.9, random_state=42)
 
     test_classifiers(acoustic_dataset[1], acoustic_dataset[3], wifi_dataset[1], wifi_dataset[3])
         

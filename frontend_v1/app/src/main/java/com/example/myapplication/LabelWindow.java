@@ -136,84 +136,87 @@ public class LabelWindow extends Activity {
 
                     wifi_list = new ArrayList<>();
                     new Thread(new Runnable() {
+
                         @Override
                         public void run() {
 
-                            // Collect WiFi Data
-                            for (int i = 0; i < Globals.REPEAT_WIFI; i++) {
-                                waitingForScan = true;
-                                final int counter = i;
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        progress.setText(String.valueOf(counter) + "/" + String.valueOf(Globals.REPEAT_WIFI));  // THIS LINE CRASHES THE PROGRAM
+                            for(int j = 0; j < 10; j++) {
+                                // Collect WiFi Data
+                                wifi_list = new ArrayList<>();
+                                for (int i = 0; i < Globals.REPEAT_WIFI; i++) {
+                                    waitingForScan = true;
+                                    final int counter = i;
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            progress.setText(String.valueOf(counter) + "/" + String.valueOf(Globals.REPEAT_WIFI));  // THIS LINE CRASHES THE PROGRAM
+                                        }
+                                    });
+                                    boolean success = wifiManager.startScan();
+                                    if (!success) {
+                                        // scan failure handling
+                                        System.out.println("No success here :(");
                                     }
-                                });
-                                boolean success = wifiManager.startScan();
-                                if (!success) {
-                                    // scan failure handling
-                                    System.out.println("No success here :(");
-                                }
-                                while(waitingForScan);
-                                try {
-                                    Thread.sleep(Globals.THROTTLE_WIFI_MS);
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    progress.setText("emitting chirps...");  // THIS LINE CRASHES THE PROGRAM
-                                }
-                            });
-                            AudioRecord audioRecord = createAudioRecord();
-                            int buffer_size = (int) (Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP);
-                            short[] buffer = new short[buffer_size];
-
-                            List<short[]> listOfRecords = new ArrayList<>();
-
-                            audioRecord.startRecording();
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
+                                    while(waitingForScan);
                                     try {
-                                        cyclicBarrier.await();
-
-                                        audioRecord.read(buffer, 0, buffer_size);
-                                    } catch (BrokenBarrierException e) {
-                                        throw new RuntimeException(e);
+                                        Thread.sleep(Globals.THROTTLE_WIFI_MS);
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
                                     }
-
                                 }
-                            }).start();
 
-                            ChirpEmitterBisccitAttempt.playSound(Globals.CHIRP_FREQUENCY, Globals.REPEAT_CHIRP, cyclicBarrier);
-
-                            listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
-                            audioRecord.stop();
-                            audioRecord.release();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    progress.setText("processing...");  // THIS LINE CRASHES THE PROGRAM
-                                }
-                            });
-                            new Thread(() -> {
-                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim(), wifi_list), server_ip);
-                                training = false;
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        progress.setText("Done!");
+                                        progress.setText("emitting chirps...");  // THIS LINE CRASHES THE PROGRAM
                                     }
                                 });
-                            }).start();
+                                AudioRecord audioRecord = createAudioRecord();
+                                int buffer_size = (int) (Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP);
+                                short[] buffer = new short[buffer_size];
+
+                                List<short[]> listOfRecords = new ArrayList<>();
+
+                                audioRecord.startRecording();
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            cyclicBarrier.await();
+
+                                            audioRecord.read(buffer, 0, buffer_size);
+                                        } catch (BrokenBarrierException e) {
+                                            throw new RuntimeException(e);
+                                        } catch (InterruptedException e) {
+                                            throw new RuntimeException(e);
+                                        }
+
+                                    }
+                                }).start();
+
+                                ChirpEmitterBisccitAttempt.playSound(Globals.CHIRP_FREQUENCY, Globals.REPEAT_CHIRP, cyclicBarrier);
+
+                                listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
+                                audioRecord.stop();
+                                audioRecord.release();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        progress.setText("processing...");  // THIS LINE CRASHES THE PROGRAM
+                                    }
+                                });
+                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim(), wifi_list), server_ip);
+                            }
+                            training = false;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progress.setText("Done!");
+                                }
+                            });
                         }
                     }).start();
+
 
                 }
             }

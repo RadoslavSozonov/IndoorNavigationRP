@@ -78,10 +78,10 @@ class AcousticClassifier:
             # print("test set size: " + str(np.size(images_test)))
 
             # train the model
-            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=30, 
+            history = self.model.fit(images_train, tf.keras.utils.to_categorical(labels_train, room_amount), epochs=100, 
                         validation_data=(images_test, tf.keras.utils.to_categorical(labels_test, room_amount)))
 
-            
+
             # plt.plot(history.history['accuracy'], label='accuracy')
             # plt.plot(history.history['val_accuracy'], label = 'val_accuracy')
             # plt.xlabel('Epoch')
@@ -106,8 +106,8 @@ class AcousticClassifier:
         for i, acoustic_sample in enumerate(test_images):
             x = self.get_predictions(acoustic_sample)
             acoustic_predictions.append(np.argmax(x))
-        create_confusion_matrix(test_labels, acoustic_predictions, np.asarray(self.int_to_label), "./metadata/accuracy/acoustic_confusion_matrix.png")
         accuracy = accuracy_score(test_labels, acoustic_predictions)
+        create_confusion_matrix(test_labels, acoustic_predictions, np.asarray(self.int_to_label),accuracy, "acoustic")
         return accuracy
     def load_model(self, filename):
         with self.training_lock:
@@ -126,13 +126,9 @@ class AcousticClassifier:
             if self.model_trained:
                 
                 weights = self.model.predict(np.array([sample,]))
-                print(weights)
-                print(self.int_to_label)
                 return self.int_to_label[np.argmax(weights)]
             else:
                 return "Model is not trained yet"
-
-
 
 
 if __name__ == "__main__":

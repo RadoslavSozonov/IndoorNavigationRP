@@ -157,9 +157,20 @@ public class ServerCommunication {
                     response.append(inputLine);
                 }
                 in.close();
-                String label = response.toString();
+                String json_string = response.toString();
+                Type building_map_type = new TypeToken<Map<String, String[]>>() {}.getType();
+                Map<String, String[]> rooms = new Gson().fromJson(json_string, building_map_type);
 
-                return label;
+                String final_list = "";
+                for(Map.Entry<String, String[]> entry: rooms.entrySet()) {
+                    if(entry.getKey().equals("wifi_top_k_prediction")) {
+                        final_list += entry.getKey() + ":\n" + Arrays.toString(entry.getValue()) + "\n";
+                        continue;
+                    }
+                    final_list += entry.getKey() + ":\n" + entry.getValue()[0] + "\n" +"-----------------------------------------------\n";
+
+                }
+                return final_list;
             }
         } catch (IOException e) {
             e.printStackTrace();

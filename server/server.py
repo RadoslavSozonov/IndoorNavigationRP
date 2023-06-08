@@ -1,5 +1,5 @@
 from flask import Flask, request 
-from data_handling import find_first_chirp, create_spectrogram, create_training_set, create_wifi_training_set, train_classifiers, get_rooms_from_db
+from data_handling import find_first_chirp, create_spectrogram, create_training_set, create_wifi_training_set, train_classifiers, get_rooms_from_db, multi_classify
 from scipy.io.wavfile import write
 from scipy.io.wavfile import write
 from scipy.signal import spectrogram
@@ -58,10 +58,11 @@ def add_room():
 def recognize_room():
     room_data = request.json
     room_audio = room_data['audio']
+    wifi_list = room_data['wifi_list'][0]['list']
     np_arr = np.asarray(room_audio, dtype=np.int16)
     np_arr = np_arr[0, int(constants.chirp_first_error * constants.interval_samples): int((constants.recognize_chirp_amount - constants.chirp_last_error) * constants.interval_samples)]
-    
-    return classify_single_echo(np_arr)
+
+    return multi_classify(np_arr, wifi_list)
 
 if __name__ == '__main__':
     APP.run(host='0.0.0.0', debug=True)
