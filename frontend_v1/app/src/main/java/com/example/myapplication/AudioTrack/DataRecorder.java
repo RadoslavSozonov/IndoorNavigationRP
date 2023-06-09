@@ -28,16 +28,17 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 public class DataRecorder {
-    private int chirpRepeat;
 
     private Activity activity;
 
     private RecordingCallback callback;
 
-    public DataRecorder(int chirpRepeat, Activity activity, RecordingCallback callback) {
-        this.chirpRepeat = chirpRepeat;
+    private double duration;
+
+    public DataRecorder(double duration, Activity activity, RecordingCallback callback) {
         this.activity = activity;
         this.callback = callback;
+        this.duration = duration;
     }
 
     public void recordData() {
@@ -45,7 +46,7 @@ public class DataRecorder {
 
         AudioRecord audioRecord = createAudioRecord();
         System.out.println(audioRecord.getState());
-        CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord, this.chirpRepeat);
+        CaptureAcousticEcho captureAcousticEcho = new CaptureAcousticEcho(audioRecord ,duration);
 //                    Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
         Thread threadCapture = new Thread(captureAcousticEcho, "captureEcho");
         List<float[]> listOfRecords = new ArrayList<>();
@@ -53,10 +54,9 @@ public class DataRecorder {
         //ChirpEmitterBisccitAttempt.playSound(CHIRP_FREQUENCY, chirpRepeat);
 
         TimerTask task = new TimerTask() {
-            int count = 0;
             @Override
             public void run() {
-                ChirpEmitterBisccitAttempt.playSound(chirpRepeat);
+                ChirpEmitterBisccitAttempt.playSound(duration);
             }
         };
 
@@ -67,7 +67,7 @@ public class DataRecorder {
         threadCapture.start();
 
         try {
-            Thread.sleep((long)(Globals.DURATION * 1000));
+            Thread.sleep((long)(this.duration * 1000));
             captureAcousticEcho.stopCapture();
             //timer.cancel();
             audioRecord.stop();
@@ -126,7 +126,7 @@ public class DataRecorder {
                 44100,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_FLOAT,
-                (int) (44100 * 0.1 * chirpRepeat) // sampleRate*duration*2*repeats
+                (int) (Globals.SAMPLE_RATE * duration) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;

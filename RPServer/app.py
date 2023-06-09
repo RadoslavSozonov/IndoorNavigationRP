@@ -65,14 +65,17 @@ def train_model():
     audio_samples = []
     labels = []
 
-    for building in data:
-        for room in data[building]:
-            for i in range(len(data[building][room]['data'])):
+    for building in data['Buildings']:
+        for room in data['Buildings'][building]:
+            for i in range(len(data['Buildings'][building][room]['data'])):
                 # load the file and train model using data
-                _, audio_sample = wavfile.read(data[building][room]['data'][i])
+                # _, audio_sample = wavfile.read(data['Buildings'][building][room]['data'][i])
+                audio_sample = np.load(data['Buildings'][building][room]['data'][i])
+
+                print(len(audio_sample))
 
                 audio_samples.append(audio_sample)
-                labels.append(data[building][room]['ID'])
+                labels.append(data['Buildings'][building][room]['ID'])
 
     # print(labels)
     model.train(audio_samples, labels)
@@ -87,9 +90,15 @@ def classify():
     for key in dictionary:
         dictionary[key] = [float(i) for i in dictionary[key].strip('][').split(', ')]
 
-    sound_sample = dictionary['1']
+    sound_sample = dictionary['recording']
 
-    return model.predict(sound_sample)
+    sound_sample = np.array(sound_sample, dtype=np.float32)
+
+    normalized_sample = (sound_sample - np.mean(sound_sample)) / np.std(sound_sample)
+    prediction = model.predict(np.expand_dims(normalized_sample, axis=0))
+    predicted_label = model.id_to_label[np.argmax(prediction)]
+    print(f'Predicted Label: {predicted_label}')
+    return predicted_label
 
 def handle_input(sound_sample, room, building):
     filtered_sample =  audioFilter.apply_high_pass_filter(sound_sample, 9000)
@@ -99,7 +108,9 @@ def handle_input(sound_sample, room, building):
     cnt = 0
     window = duration * 44100
     for i in range(0, len(filtered_sample) - window,  window):
+        print(len(filtered_sample[i: i+window]))
         fy = spectogramCreator.generate_fourier_graph(filtered_sample[i: i+window], filename(building, room, "FOURIER_"+str(cnt)), False)
+        print(len(fy))
         # ADD TO DATABASE
         database.save_image(building, room, fy)
         cnt += 1

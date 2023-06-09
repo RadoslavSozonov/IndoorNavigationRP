@@ -2,9 +2,7 @@ package com.example.myapplication.AudioTrack;
 
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.audiofx.LoudnessEnhancer;
 
 import com.example.myapplication.Globals;
 
@@ -16,7 +14,7 @@ public class ChirpEmitterBisccitAttempt {
 
     private int repeatChirp;
 
-    public static void playSound(int repeatChirp) {
+    public static void playSound(double duration) {
         int bufferSize = AudioTrack.getMinBufferSize(Globals.SAMPLE_RATE,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
         double sinRate = Globals.CHIRP_FREQUENCY * Math.PI / (0.5 * Globals.SAMPLE_RATE);
@@ -38,7 +36,7 @@ public class ChirpEmitterBisccitAttempt {
         int relativeChirpDuration = (int)(Globals.CHIRP_DURATION * Globals.SAMPLE_RATE);
         int relativeIntervalDuration = (int)(Globals.CHIRP_INTERVAL * Globals.SAMPLE_RATE);
 
-        short[] audio = new short[(int)(Globals.SAMPLE_RATE * Globals.DURATION)];
+        short[] audio = new short[(int)(Globals.SAMPLE_RATE * duration)];
 
         for (int i=0;i<audio.length;){
 

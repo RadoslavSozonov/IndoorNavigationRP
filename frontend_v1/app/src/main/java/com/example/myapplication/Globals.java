@@ -8,5 +8,6 @@ public class Globals {
     public static double CHIRP_DURATION = 0.015;
     public static int SAMPLE_RATE = 44100;
     public static double CHIRP_INTERVAL = 0.1;
-    public static double DURATION = 10;
+    public static double LABEL_DURATION = 25;
+    public static double RECOGNIZE_DURATION = 3;
 }

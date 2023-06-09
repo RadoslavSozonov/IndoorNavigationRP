@@ -67,7 +67,7 @@ public class RecognizeWindow extends Activity {
         getWindow().setAttributes(layoutParams);
 
         // record audio
-        DataRecorder dataRecorder = new DataRecorder(50, getThis(), new RecognizeCallback());
+        DataRecorder dataRecorder = new DataRecorder(Globals.RECOGNIZE_DURATION, getThis(), new RecognizeCallback());
 
         dataRecorder.recordData();
 
