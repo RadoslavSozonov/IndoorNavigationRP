@@ -7,7 +7,6 @@ import numpy as np
 import time
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from DeepModels.DBNModel import DBNModel
 from DeepModels.DNNModel import DNNModel
 from DeepModels.DTCModel import DTCModel
 from DeepModels.KNNModel import KNNModel
@@ -163,27 +162,6 @@ class ModelCreator:
         self.execute_model_train_and_prediction(rnn_model, model_name, X_train, y_train, X_test, y_test,
                                                 epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
 
-    def create_and_train_dbn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, labels):
-        dbn_model = DBNModel()
-
-        dbn_model.create_new_model(
-            model_name,
-            model_info["hidden_layers_structure"],
-            model_info["learning_rate_rbm"],
-            model_info["learning_rate"],
-            model_info["n_epochs_rbm"],
-            model_info["n_iter_backprop"],
-            model_info["batch_size"],
-            model_info["activation_function"],
-            model_info["dropout_p"],
-        )
-
-        dbn_model.train(
-            model_name,
-            X_train,
-            y_train
-        )
-
     def layers_creator(self, name, model_info):
         layers_info = []
         layers = model_info[name]
@@ -193,7 +171,7 @@ class ModelCreator:
 
     def execute_model_train_and_prediction(self, model, model_name, X_train, y_train, X_test, y_test, labels, params, epochs=20,
                                            model_batches=32):
-        _, _, time = model.train(
+        history, _, time = model.train(
             model_name,
             X_train,
             y_train,
@@ -208,7 +186,7 @@ class ModelCreator:
         y_pred = [np.argmax(x) for x in results]
         acc = accuracy_score(y_test, y_pred)
         print(acc)
-        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60)
+        self.confusion_matrix_generator_and_plots(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60, history, epochs)
 
     def shuffle(self, spectrograms, encoded_labels):
 
@@ -222,7 +200,7 @@ class ModelCreator:
 
         return shuffled_list
 
-    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time):
+    def confusion_matrix_generator_and_plots(self, name, y_act, y_pred, class_names, params, time, history, epochs):
         cm = confusion_matrix(y_act, y_pred)
         fig = plt.figure(figsize=(16, 14))
         ax = plt.subplot()
@@ -239,5 +217,21 @@ class ModelCreator:
         plt.yticks(rotation=0)
         name += "_"+str(params)+"_"+str(round(time,2))
         plt.title(name, fontsize=20)
-
+        # print(history.history)
         plt.savefig("confusion_matrices/" + name + ".png")
+        plt.clf()
+        train_loss = history.history['loss']
+        val_loss = history.history['val_loss']
+        train_acc = history.history['sparse_categorical_accuracy']
+        val_acc = history.history['val_sparse_categorical_accuracy']
+        xc = range(epochs)
+        plt.clf()
+        plt.plot(xc, train_loss, color="red", label="train_loss")
+        plt.plot(xc, val_loss, color="blue", label="val_loss")
+        plt.legend(loc="upper left")
+        plt.savefig("plots/" + name + "_loss" + ".png")
+        plt.clf()
+        plt.plot(xc, train_acc, color="red", label="train_acc")
+        plt.plot(xc, val_acc, color="blue", label="val_acc")
+        plt.legend(loc="upper left")
+        plt.savefig("plots/" + name + "_train" + ".png")

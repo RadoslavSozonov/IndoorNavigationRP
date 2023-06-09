@@ -69,7 +69,11 @@ public class ModelManager {
     }
 
     public void evaluateModel(){
-//        this.model.evaluate(dataChunkList, labelsList);
+        List<DataChunk> dataChunkList = dataSet.getDataset().stream().flatMap(x->x.getDataChunkList().stream()).collect(Collectors.toList());
+        this.model.evaluate(
+                dataChunkList.stream().map(DataChunk::getSpetrogram).collect(Collectors.toList()),
+                dataChunkList.stream().map(x->labelMap.get(x.getLabel())).collect(Collectors.toList())
+        );
     }
 
     public int predict(DataChunk dataChunk){

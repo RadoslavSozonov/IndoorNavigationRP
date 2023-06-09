@@ -9,7 +9,6 @@ from scipy.signal import spectrogram
 from scipy.signal.windows import hann
 from scipy.io.wavfile import write
 from DeepModels.CNNModel import CNNModel
-from DeepModels.DBNModel import DBNModel
 from DeepModels.DNNModel import DNNModel
 from DeepModels.KNNModel import KNNModel
 from DeepModels.LinearClassificationModel import LinearClassificationModel
@@ -46,7 +45,7 @@ def convert_wav_to_text_file():
         if not place.__contains__("EWI"):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
-        with open('text_files/'+place.split(".")[0]+".txt", 'w') as f:
+        with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
             for line in wav_array:
                 f.write(f"{line}\n")
         # np_arr = np.array(wav_array)
@@ -73,41 +72,45 @@ def add_room():
 
     return 'OK'
 
-
 @app.route('/')
-def hello_world():  # put application's code here
-    spectgramCreator = SpectogramCreator()
-    letters = ["A", "B", "C", "D", "E"]
-    # samplerate, wav_array = wavfile.read('wav_files/EWI_A.wav')
-    # np_arr = np.asarray(wav_array, dtype=np.int16)
-    # chirp_sample_offset = compute_offset(np_arr)
-    # for place in os.listdir("wav_files/"):
-    #     if not place.__contains__("EWI"):
-    #         continue
-    #     samplerate, wav_array = wavfile.read('wav_files/'+place)
-    #     np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
-    #     chirp_sample_offset = compute_offset(np_arr)
-    #     # print(chirp_sample_offset)
-    #     # chirp_sample_offset = 0
-    #     # print(chirp_sample_offset)
-    #     letter = place.split("_")[1].split(".")[0]
-    #     print(letter)
-    #     for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
-    #         # if i == 5:
-    #         #     start_rate = int((i + 1) * interval_rate + chirp_sample_offset)
-    #         #     sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-    #         #     plt.plot(sliced)
-    #         #     plt.ylabel("Amplitude")
-    #         #     plt.xlabel("Time")
-    #         #     # plt.show()
-    #         #     plt.savefig("waveplots/"+letter+"_"+str(i)+"_3.png")
-    #         #     plt.clf()
-    #
-    #         start_rate = int((i+1) * interval_rate + chirp_sample_offset)
-    #         sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-    #         spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI", i)
-
+def hello_world():
     return 'Hello World!'
+
+
+@app.route('/load_data_db')
+def load_data_db():  # put application's code here
+    spectgramCreator = SpectogramCreator()
+
+    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
+    np_arr = np.asarray(wav_array, dtype=np.int16)
+    chirp_sample_offset = compute_offset(np_arr)
+    for place in os.listdir("wav_files/"):
+        if not place.__contains__("EWI7"):
+            continue
+        samplerate, wav_array = wavfile.read('wav_files/'+place)
+        np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
+        chirp_sample_offset = compute_offset(np_arr)
+        # print(chirp_sample_offset)
+        # chirp_sample_offset = 0
+        # print(chirp_sample_offset)
+        letter = place.split("_")[-1].split(".")[0]
+        print(letter)
+        for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
+            # if i == 5:
+            #     start_rate = int((i + 1) * interval_rate + chirp_sample_offset)
+            #     sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+            #     plt.plot(sliced)
+            #     plt.ylabel("Amplitude")
+            #     plt.xlabel("Time")
+            #     # plt.show()
+            #     plt.savefig("waveplots/"+letter+"_"+str(i)+"_3.png")
+            #     plt.clf()
+
+            start_rate = int((i+1) * interval_rate + chirp_sample_offset)
+            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+            spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI7_06", i)
+
+    return 'Loaded!'
 
 @app.route('/predict_location')
 def predict_location():
@@ -226,511 +229,25 @@ def initialize_models():
     DNNModel().load_models("models/dnn_models/")
     CNNModel().load_models("models/cnn_models/")
     RNNModel().load_models("models/rnn_models/")
-    # DBNModel().load_models("models/dbn_models/")
+
     KNNModel().load_models("models/knn_models/")
     LinearClassificationModel().load_models("models/sgd_models/")
+    return "done"
+
+@app.route('/compress_models')
+def compress_models():
+    DNNModel().compress("models/dnn_models/")
+    CNNModel().compress("models/cnn_models/")
+    RNNModel().compress("models/rnn_models/")
+    # DBNModel().load_models("models/dbn_models/")
+    # KNNModel().load_models("models/knn_models/")
+    # LinearClassificationModel().load_models("models/sgd_models/")
     return "done"
 
 if __name__ == '__main__':
     app.run(host="192.168.56.1", port=5000, debug=True)
 
-'''
-Example request to train model and body:
-http://145.94.215.245:5000/train_model_for_building?buildingLabel=Kloost226&modelName=my_first_nn&epochs=100&batch=32
-{
-    "models": [
-        {
-        #     "model": "cnn",
-        #     "conv_layers": [
-        #         {
-        #             "conv_filters": 16,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 1
-        #         },
-        #         {
-        #             "conv_filters": 32,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 2
-        #         }
-        #     ],
-        #     "dense_layers": [
-        #         {
-        #             "units": 1024,
-        #             "activation_func": "relu"
-        #         }
-        #     ]
-        # },
-        # {
-        #     "model": "cnn",
-        #     "conv_layers": [
-        #         {
-        #             "conv_filters": 16,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 1
-        #         }
-        #     ],
-        #     "dense_layers": [
-        #         {
-        #             "units": 1024,
-        #             "activation_func": "relu"
-        #         }
-        #     ]
-        # },
-        # {
-        #     "model": "cnn",
-        #     "conv_layers": [
-        #         {
-        #             "conv_filters": 16,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 1
-        #         },
-        #         {
-        #             "conv_filters": 16,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 2
-        #         }
-        #     ],
-        #     "dense_layers": [
-        #         {
-        #             "units": 1024,
-        #             "activation_func": "relu"
-        #         }
-        #     ]
-        # },
-        # {
-        #     "model": "cnn",
-        #     "conv_layers": [
-        #         {
-        #             "conv_filters": 32,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 1
-        #         },
-        #         {
-        #             "conv_filters": 32,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 2
-        #         }
-        #     ],
-        #     "dense_layers": [
-        #         {
-        #             "units": 1024,
-        #             "activation_func": "relu"
-        #         }
-        #     ]
-        # },
-        # {
-        #     "model": "cnn",
-        #     "conv_layers": [
-        #         {
-        #             "conv_filters": 16,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 1
-        #         },
-        #         {
-        #             "conv_filters": 32,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 2
-        #         },
-        #         {
-        #             "conv_filters": 64,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "layer_num": 3
-        #         }
-        #     ],
-        #     "dense_layers": [
-        #         {
-        #             "units": 1024,
-        #             "activation_func": "relu"
-        #         }
-        #     ]
-        # },
-        # {
-        #     "model": "cnn",
-        #     "conv_layers": [
-        #         {
-        #             "conv_filters": 16,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 1
-        #         },
-        #         {
-        #             "conv_filters": 32,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "pool_layer_filter_size": 2,
-        #             "layer_num": 2
-        #         },
-        #         {
-        #             "conv_filters": 64,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "layer_num": 3
-        #         },
-        #         {
-        #             "conv_filters": 128,
-        #             "conv_activation_func": "relu",
-        #             "conv_layer_filter_size": 4,
-        #             "layer_num": 3
-        #         }
-        #     ],
-        #     "dense_layers": [
-        #         {
-        #             "units": 1024,
-        #             "activation_func": "relu"
-        #         }
-        #     ]
-        # },
-        {
-            "model": "cnn",
-            "conv_layers": [
-                {
-                    "conv_filters": 16,
-                    "conv_activation_func": "relu",
-                    "conv_layer_filter_size": 4,
-                    "pool_layer_filter_size": 2,
-                    "layer_num": 1
-                },
-                {
-                    "conv_filters": 32,
-                    "conv_activation_func": "relu",
-                    "conv_layer_filter_size": 4,
-                    "pool_layer_filter_size": 2,
-                    "layer_num": 2
-                },
-                {
-                    "conv_filters": 64,
-                    "conv_activation_func": "relu",
-                    "conv_layer_filter_size": 4,
-                    "layer_num": 3
-                },
-                {
-                    "conv_filters": 128,
-                    "conv_activation_func": "relu",
-                    "conv_layer_filter_size": 4,
-                    "layer_num": 3
-                },
-                {
-                    "conv_filters": 256,
-                    "conv_activation_func": "relu",
-                    "conv_layer_filter_size": 4,
-                    "layer_num": 3
-                }
-            ],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 512,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 256,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 128,
-                    "activation_func": "relu"
-                }
-            ]
-        },    
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 512,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 512,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 256,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 512,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 256,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 128,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 128,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 256,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 512,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 2048,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "dnn",
-            "dense_layers": [
-                {
-                    "units": 2048,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 512,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 256,
-                    "activation_func": "relu"
-                },
-                {
-                    "units": 128,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "rnn",
-            "lstm_units": [64],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "rnn",
-            "lstm_units": [64, 128],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "rnn",
-            "lstm_units": [64, 128, 256],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "rnn",
-            "lstm_units": [512, 1024],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "rnn",
-            "lstm_units": [1024, 512],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        },
-        {
-            "model": "rnn",
-            "lstm_units": [256, 128, 64],
-            "dense_layers": [
-                {
-                    "units": 1024,
-                    "activation_func": "relu"
-                }
-            ]
-        }                                                      
-    ]
-}   
-
-    
-{
-    "dense_layers": [
-        {
-            "units": 1024,
-            "activation_func": "relu"
-        },
-        {
-            "units": 512,
-            "activation_func": "relu"
-        },
-        {
-            "units": 256,
-            "activation_func": "relu"
-        },
-        {
-            "units": 128,
-            "activation_func": "relu"
-        }
-    ]
-}    
-
-{
-    "lstm_units": [64],
-    "dense_layers": [
-        {
-            "units": 1024,
-            "activation_func": "relu"
-        },
-        {
-            "units": 512,
-            "activation_func": "relu"
-        },
-        {
-            "units": 256,
-            "activation_func": "relu"
-        },
-        {
-            "units": 128,
-            "activation_func": "relu"
-        }
-    ]
-}
-
-{
-    "hidden_layers_structure": [256, 256],
-    "learning_rate_rbm": 0.05,
-    "learning_rate":0.1,
-    "n_epochs_rbm":10,
-    "n_iter_backprop":100,
-    "batch_size":32,
-    "activation_function":"relu",
-    "dropout_p":0.2
-}
-
-
-{
-    "model": "linearSVM",
-    "penalty": "l2",
-    "loss": "squared_hinge",
-    "tol": 0.0001,
-    "C": 1,
-    "max_iter": 1000
-}
-
-{
-    "model": "dtc",
-    "criterion": "gini",
-    "splitter": "best",
-    "max_features": "auto"
-}
-
-{
-    "model": "sgd",
-    "penalty": "l2",
-    "loss": "hinge",
-    "tol": 0.0001,
-    "alpha": 0.00001,
-    "max_iter": 1000,
-    "l1_ratio": 0.15
-}
-
-{
-    "model": "knn",
-    "n_neighbors": 5,
-    "weights": "uniform",
-    "algorithm": "auto",
-    "n_jobs": 1
-}
-
-'''
+# 1. Finish the last three rnn models
+# 2. Resolve the problem with rnn models compression
+# 3. Improve code quality
+#

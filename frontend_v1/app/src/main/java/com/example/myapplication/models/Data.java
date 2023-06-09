@@ -1,5 +1,7 @@
 package com.example.myapplication.models;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,9 +26,15 @@ public class Data {
         for(int i = intervalsToOmit; i<audioIntervals-intervalsToOmit; i++){
             short[] chunk = new short[intervalDataPoints];
             for(int y = 0; y<intervalDataPoints; y++){
-                chunk[y] = audioData[i*intervalDataPoints+y+offset];
+                try {
+                    chunk[y] = audioData[i*intervalDataPoints+y+offset];
+                } catch (Exception e){
+                    Log.i("addData",e.getMessage());
+                    break;
+                }
+
             }
-            DataChunk dataChunk = new DataChunk();
+            DataChunk dataChunk = new DataChunk(this.building, this.label);
             dataChunk.createSpectrogram(chunk);
             dataChunkList.add(dataChunk);
         }

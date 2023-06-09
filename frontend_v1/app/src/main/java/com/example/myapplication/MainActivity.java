@@ -22,8 +22,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.myapplication.models.CNNModel;
 import com.example.myapplication.models.Data;
 import com.example.myapplication.models.DataSet;
+import com.example.myapplication.models.ModelAbstract;
+import com.example.myapplication.models.ModelManager;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -93,61 +96,23 @@ public class MainActivity extends AppCompatActivity {
         button_recognize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: get the label of the room
-//                "android.resource://"+ "com.example.phone"+ "/" + "raw/dennis"
-                String filePath = "android.resource://"+ "com.example.myapplication"+ "/" + "in.txt";
-//                Field[] fields=R.raw.class.getFields();
-//                R.raw.class.getResourceAsStream();
-//                for(int count=0; count < fields.length; count++){
-//                    Log.i("Raw Asset: ", fields[count].getName());
-//                }
-                short[] audioData = loadAudioData(filePath);
+                DataSet dataSet = loadAudioData();
                 System.out.println("Data collected");
-                ServerCommunicationCronetEngine.getNameOfModel(activity, "145.94.211.247");
-                while (ModelName.modelNames.size() == 0){
-                    continue;
-                }
-                int sampleRate = 4410;
-                int chirps = audioData.length/sampleRate;
-                System.out.println(chirps);
-//                System.out.println(na);
-                for(String modelName: ModelName.modelNames){
-                    Log.i("Model Name", modelName.substring(1, modelName.length()-1));
-                    int timeOnBackend = 0;
-                    int timeReqRes = 0;
-                    for(int i = 2; i <= chirps - 2; i++){
-                        short[] chirp = new short[8820];
-                        for(int y = 0, z = i*sampleRate; y<8820; y++){
-                            chirp[y] = audioData[z+y];
-                        }
-                        while (i-2 != ResponseTimes.backendResponseTime.size()){
-                            continue;
-                        }
-                        List<Integer> times = ServerCommunicationCronetEngine.testPlace(chirp, modelName.substring(1, modelName.length()-1), activity,"145.94.211.247");
-                    }
-                    Log.i("Backend Time", String.valueOf(ResponseTimes.backendResponseTime.stream().mapToDouble(a->a).average()));
-                    Log.i("Response Time", String.valueOf(ResponseTimes.requestResponseTime.stream().mapToDouble(a->a).average()));
-
-                }
-
-//                String room_label = "room 1";
-//
-//
-//                // Make a pop up showing the room label
-//                Intent intent = new Intent(MainActivity.this, RecognizeWindow.class);
-//                intent.putExtra("title", "The room label is:");
-//                intent.putExtra("text", room_label);
-//                startActivity(intent);
+                String modelName = "cnn_conv_16_32_dense_1024_2023_06_09_16_27_EWI7_06.tflite";
+                ModelAbstract model = new CNNModel(activity, modelName);
+                ModelManager modelManager = new ModelManager(model, dataSet);
+                modelManager.evaluateModel();
             }
 
-            public short[] loadAudioData(String name){
+            public DataSet loadAudioData(){
 //                InputStream inputStream = new
                 DataSet dataList = new DataSet();
                 Resources resources = getResources();
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
                 for(int i = 0; i<fields.length;i++){
-                    System.out.println(fields[i].getName());
+                    String modelName = fields[i].getName().split("_")[2].split("\\.")[0];
+                    System.out.println();
                     int rID = 0;
                     try {
                         rID = fields[i].getInt(fields[i]);
@@ -176,14 +141,15 @@ public class MainActivity extends AppCompatActivity {
 
                     //return the output stream as a String
                     String output = oS.toString();
-                    String[] numbers = output.split("\n");
+                    String[] numbers = output.substring(0, 100*4410).split("\n");
                     short[] shorts = new short[numbers.length];
+                    Log.i("Label", modelName);
                     for(int j = 0; j<numbers.length; j++){
                         String number = numbers[j].replace("\r", "");
                         short shortNum = Short.parseShort(number);
                         shorts[j] = shortNum;
                     }
-                    Data data = new Data("Ewi", "A");
+                    Data data = new Data("Ewi", modelName);
                     data.addData(shorts);
                     dataList.addData(data);
 
@@ -196,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
 //                        data[i] = 15000;
 //                    }
 //                }
-                return new short[10];
+                return dataList;
             }
         });
 
