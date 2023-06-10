@@ -179,7 +179,7 @@ class ModelCreator:
 
     def execute_model_train_and_prediction(self, model, model_name, X_train, y_train, X_test, y_test, labels, params, epochs=20,
                                            model_batches=32, meter=None):
-        _, _, time = model.train(
+        history, _, time = model.train(
             model_name,
             X_train,
             y_train,
@@ -195,7 +195,7 @@ class ModelCreator:
         y_pred = [np.argmax(x) for x in results]
         acc = accuracy_score(y_test, y_pred)
         print(acc)
-        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60, meter)
+        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60, history, epochs, meter)
 
     def shuffle(self, spectrograms, encoded_labels):
 
@@ -209,7 +209,7 @@ class ModelCreator:
 
         return shuffled_list
 
-    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time, meter):
+    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time, history, epochs, meter):
         print(meter.result)
         cm = confusion_matrix(y_act, y_pred)
         fig = plt.figure(figsize=(16, 14))
@@ -225,7 +225,23 @@ class ModelCreator:
         ax.set_ylabel('True', fontsize=20)
         ax.yaxis.set_ticklabels(class_names, fontsize=10)
         plt.yticks(rotation=0)
-        name += "_"+str(params)+"_"+str(round(time,2))
+        name += "_" + str(params) + "_" + str(round(time, 2))
         plt.title(name, fontsize=20)
-
+        # print(history.history)
         plt.savefig("confusion_matrices/" + name + ".png")
+        plt.clf()
+        train_loss = history.history['loss']
+        val_loss = history.history['val_loss']
+        train_acc = history.history['sparse_categorical_accuracy']
+        val_acc = history.history['val_sparse_categorical_accuracy']
+        xc = range(epochs)
+        plt.clf()
+        plt.plot(xc, train_loss, color="red", label="train_loss")
+        plt.plot(xc, val_loss, color="blue", label="val_loss")
+        plt.legend(loc="upper left")
+        plt.savefig("plots/" + name + "_loss" + ".png")
+        plt.clf()
+        plt.plot(xc, train_acc, color="red", label="train_acc")
+        plt.plot(xc, val_acc, color="blue", label="val_acc")
+        plt.legend(loc="upper left")
+        plt.savefig("plots/" + name + "_train" + ".png")
