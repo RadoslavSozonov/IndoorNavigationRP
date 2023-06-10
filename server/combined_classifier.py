@@ -4,10 +4,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_s
 from utils import create_confusion_matrix
 
 def weighted_average(acoustic_model, wifi_model, acoustic_weight, acoustic_sample, wifi_sample):
-    prediction = acoustic_model.get_predictions(acoustic_sample)
-    prediction_norm = ((prediction-np.min(prediction))/(np.max(prediction)-np.min(prediction)))[0]
-
-    acoustic_prediction = np.asarray(prediction_norm)
+    acoustic_prediction = acoustic_model.get_predictions(acoustic_sample)[0]
     wifi_prediction = wifi_model.classify_probability(np.reshape(wifi_sample, (1,len(wifi_sample))))[0]
 
     combined_probability = acoustic_weight * acoustic_prediction + wifi_prediction
@@ -19,7 +16,6 @@ def weighted_average(acoustic_model, wifi_model, acoustic_weight, acoustic_sampl
 def two_step(acoustic_model, wifi_model, top_k, acoustic_sample, wifi_sample):
     wifi_top = wifi_top_k(wifi_model, top_k, wifi_sample)
     acoustic_top = acoustic_top_k(acoustic_model, 1000, acoustic_sample)
-
     for top_choice in acoustic_top:
         if np.any(wifi_top == top_choice):
             return top_choice
@@ -30,10 +26,7 @@ def wifi_top_k(wifi_model, top_k, wifi_sample):
     return wifi_top
 
 def acoustic_top_k(acoustic_model, top_k, acoustic_sample):
-    prediction = acoustic_model.get_predictions(acoustic_sample)
-    prediction_norm = ((prediction-np.min(prediction))/(np.max(prediction)-np.min(prediction)))[0]
-
-    acoustic_prediction = np.asarray(prediction_norm)
+    acoustic_prediction = acoustic_model.get_predictions(acoustic_sample)[0]
     acoustic_top = acoustic_prediction.argsort()[-top_k:][::-1]
     return acoustic_top
 
@@ -106,8 +99,6 @@ def wifi_top_k_to_string(wifi_model, top_k, wifi_sample):
     wifi_top = wifi_prediction.argsort()[-top_k:][::-1]
     accuracy = np.sort(wifi_prediction)[::-1]
     string_list = []
-    print(wifi_top)
-    print(accuracy)
     for wifi_label, acc in zip(wifi_top, accuracy):
         string_list.append(int_to_label[wifi_label] + " " + str(round(acc, 2)))
 
@@ -116,10 +107,7 @@ def wifi_top_k_to_string(wifi_model, top_k, wifi_sample):
 
 def acoustic_top_k_to_string(acoustic_model, top_k, acoustic_sample):
     int_to_label = acoustic_model.get_int_to_label()
-    prediction = acoustic_model.get_predictions(acoustic_sample)
-    prediction_norm = ((prediction-np.min(prediction))/(np.max(prediction)-np.min(prediction)))[0]
-
-    acoustic_prediction = np.asarray(prediction_norm)
+    acoustic_prediction = acoustic_model.get_predictions(acoustic_sample)[0]
     acoustic_top = acoustic_prediction.argsort()[-top_k:][::-1]
     accuracy = np.sort(acoustic_prediction)[::-1]
     string_list = []

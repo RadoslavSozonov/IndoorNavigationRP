@@ -224,7 +224,7 @@ def train_classifiers(test_split=0.2):
     images, image_labels, image_int_to_label = db.get_acoustic_training_set()
     wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
     acoustic_dataset = train_test_split(images, image_labels, test_size=0.2, random_state=42)
-    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=0.7, random_state=42)
+    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=0.5, random_state=42)
 
     acoustic_model.train(acoustic_dataset, image_int_to_label, room_amount)
     wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount)
