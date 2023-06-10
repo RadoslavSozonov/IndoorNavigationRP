@@ -74,39 +74,38 @@ def add_room():
 
 
 @app.route('/')
-def hello_world():  # put application's code here
-    spectgramCreator = SpectogramCreator()
-    letters = ["A", "B", "C", "D", "E"]
-    # samplerate, wav_array = wavfile.read('wav_files/EWI_A.wav')
-    # np_arr = np.asarray(wav_array, dtype=np.int16)
-    # chirp_sample_offset = compute_offset(np_arr)
-    # for place in os.listdir("wav_files/"):
-    #     if not place.__contains__("EWI"):
-    #         continue
-    #     samplerate, wav_array = wavfile.read('wav_files/'+place)
-    #     np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
-    #     chirp_sample_offset = compute_offset(np_arr)
-    #     # print(chirp_sample_offset)
-    #     # chirp_sample_offset = 0
-    #     # print(chirp_sample_offset)
-    #     letter = place.split("_")[1].split(".")[0]
-    #     print(letter)
-    #     for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
-    #         # if i == 5:
-    #         #     start_rate = int((i + 1) * interval_rate + chirp_sample_offset)
-    #         #     sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-    #         #     plt.plot(sliced)
-    #         #     plt.ylabel("Amplitude")
-    #         #     plt.xlabel("Time")
-    #         #     # plt.show()
-    #         #     plt.savefig("waveplots/"+letter+"_"+str(i)+"_3.png")
-    #         #     plt.clf()
-    #
-    #         start_rate = int((i+1) * interval_rate + chirp_sample_offset)
-    #         sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-    #         spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI", i)
-
+def hello_world():
     return 'Hello World!'
+
+@app.route("/play_ground")
+def play_ground():
+    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
+    np_arr = np.asarray(wav_array, dtype=np.int16)
+    chirp_sample_offset = compute_offset(np_arr)
+    return str(chirp_sample_offset)
+
+@app.route('/load_data_db')
+def load_data_db():  # put application's code here
+    spectgramCreator = SpectogramCreator()
+
+    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
+    np_arr = np.asarray(wav_array, dtype=np.int16)
+    chirp_sample_offset = compute_offset(np_arr)
+    for place in os.listdir("wav_files/"):
+        if not place.__contains__("EWI7"):
+            continue
+        samplerate, wav_array = wavfile.read('wav_files/'+place)
+        np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
+        chirp_sample_offset = compute_offset(np_arr)
+
+        letter = place.split("_")[-1].split(".")[0]
+        print(letter)
+        for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
+            start_rate = int((i+1) * interval_rate + chirp_sample_offset)
+            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+            spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI7_06", i)
+
+    return 'Loaded!'
 
 @app.route('/predict_location')
 def predict_location():
