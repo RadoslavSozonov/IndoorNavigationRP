@@ -16,6 +16,8 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pyRAPL
+import psutil
+
 from datetime import datetime
 
 from DeepModels.SVMModel import SVMModel
@@ -120,13 +122,13 @@ class ModelCreator:
             model_name += str(layer["units"]) + "_"
         date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
         model_name += date + "_" + building
-        pyRAPL.setup()
-        meter = pyRAPL.Measurement('bar')
-        meter.begin()
+
+        start_energy = psutil.sensors_battery().percent
+
         params = cnn_model.create_new_model(model_name, conv_pool_layers_info, dense_layers_info, labels_num=labelsN,
                                             input_shape=(5, 32, 1))
         self.execute_model_train_and_prediction(cnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, meter=meter)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, energy=start_energy)
 
     def create_and_train_dnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
                              labels, model_batches, building):
@@ -139,12 +141,10 @@ class ModelCreator:
             model_name += str(layer["units"]) + "_"
         date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
         model_name += date + "_" + building
-        pyRAPL.setup()
-        meter = pyRAPL.Measurement('bar')
-        meter.begin()
+        start_energy = psutil.sensors_battery().percent
         params = dnn_model.create_new_model(model_name, dense_layers_info, labelsN)
         self.execute_model_train_and_prediction(dnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, meter=meter)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, start_energy=start_energy)
 
     def create_and_train_rnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
                              labels, model_batches, building):
@@ -162,13 +162,12 @@ class ModelCreator:
             model_name += str(layer["units"]) + "_"
         date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
         model_name += date + "_" + building
-        pyRAPL.setup()
-        meter = pyRAPL.Measurement('bar')
-        meter.begin()
+        start_energy = psutil.sensors_battery().percent
+
         params = rnn_model.create_new_model(model_name, dense_layers_info, units=lstm_layers_info, labels_num=labelsN,
                                             input_shape=(5, 32))
         self.execute_model_train_and_prediction(rnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, meter=meter)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, start_energy=start_energy)
 
     def layers_creator(self, name, model_info):
         layers_info = []
@@ -178,7 +177,7 @@ class ModelCreator:
         return layers_info
 
     def execute_model_train_and_prediction(self, model, model_name, X_train, y_train, X_test, y_test, labels, params, epochs=20,
-                                           model_batches=32, meter=None):
+                                           model_batches=32, energy=100):
         history, _, time = model.train(
             model_name,
             X_train,
@@ -188,14 +187,21 @@ class ModelCreator:
             epochs=epochs,
             batch_size=model_batches
         )
-        meter.end()
+        # end_energy = psutil.sensors_battery().percent
+        # end_power = psutil.sensors_powermonitor().power
+
+        end_power = psutil.sensors_battery().percent
+        battery = (energy - end_power)/100
+        battery_current_capacity = 30310
+        energy_consumed = round(battery*battery_current_capacity)
+        # meter.end()
         results = model.predict(model_name, X_test)
         # print(results)
         # print(np.array(results).size)
         y_pred = [np.argmax(x) for x in results]
         acc = accuracy_score(y_test, y_pred)
         print(acc)
-        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60, history, epochs, meter)
+        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60, history, epochs, energy=energy_consumed)
 
     def shuffle(self, spectrograms, encoded_labels):
 
@@ -209,8 +215,7 @@ class ModelCreator:
 
         return shuffled_list
 
-    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time, history, epochs, meter):
-        print(meter.result)
+    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time, history, epochs, energy):
         cm = confusion_matrix(y_act, y_pred)
         fig = plt.figure(figsize=(16, 14))
         ax = plt.subplot()
@@ -228,7 +233,7 @@ class ModelCreator:
         name += "_" + str(params) + "_" + str(round(time, 2))
         plt.title(name, fontsize=20)
         # print(history.history)
-        plt.savefig("confusion_matrices/" + name + ".png")
+        plt.savefig("confusion_matrices/" + name + "_" + energy + "mWH.png")
         plt.clf()
         train_loss = history.history['loss']
         val_loss = history.history['val_loss']
