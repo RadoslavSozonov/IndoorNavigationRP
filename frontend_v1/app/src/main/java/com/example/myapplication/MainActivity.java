@@ -5,6 +5,8 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import android.os.BatteryManager;
+import android.content.Context;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -24,8 +26,9 @@ import android.widget.TextView;
 
 import com.example.myapplication.models.CNNModel;
 import com.example.myapplication.models.Data;
+import com.example.myapplication.models.DataChunk;
 import com.example.myapplication.models.DataSet;
-import com.example.myapplication.models.ModelAbstract;
+import com.example.myapplication.models.Model;
 import com.example.myapplication.models.ModelManager;
 
 import java.io.BufferedReader;
@@ -36,9 +39,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -98,20 +103,63 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 DataSet dataSet = loadAudioData();
                 System.out.println("Data collected");
-                String modelName = "cnn_conv_16_32_dense_1024_2023_06_09_16_27_EWI7_06.tflite";
-                ModelAbstract model = new CNNModel(activity, modelName);
-                ModelManager modelManager = new ModelManager(model, dataSet);
-                modelManager.evaluateModel();
+                String[] modelNames = new String[]{"cnn_conv_16_32_dense_1024_2023_06_09_16_27_EWI7_06.tflite"};
+                String c = Context.BATTERY_SERVICE;
+                BatteryManager mBatteryManager =
+                        (BatteryManager)activity.getSystemService(c);
+
+                for(String modelName: modelNames){
+                    Model model = new Model(activity, modelName);
+                    ModelManager modelManager = new ModelManager(model, dataSet);
+                    int dataChunksSize = dataSet.dataChunksSize();
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        long startEnergy = mBatteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
+                        long startTime = Instant.now().getEpochSecond();
+                        float acc = modelManager.evaluateModel();
+                        long endTime = Instant.now().getEpochSecond();
+                        long endEnergy = mBatteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
+                        float averageDuration = (float) ((endTime - startTime)/60)/dataChunksSize;
+                        float averageEnergy = (float) (endEnergy-startEnergy)/dataChunksSize;
+                        String input = modelName+" "
+                                + acc +" "
+                                + Math.round(averageDuration*100)/100 +"m "
+                                + Math.round(averageEnergy*100)/100 +"nWh\n";
+                        System.out.println(input);
+                        OutputStreamWriter outputStreamWriter = null;
+                        try {
+                            outputStreamWriter = new OutputStreamWriter(activity.openFileOutput(dataSet.getBuilding()+".txt", Context.MODE_PRIVATE));
+                            outputStreamWriter.write(input);
+                        }
+                        catch (IOException e) {
+                            Log.e("Exception", "File write failed: " + e.toString());
+                        }
+                        finally {
+                            try {
+                                outputStreamWriter.close();
+                                System.out.println(activity.getFilesDir().getAbsolutePath());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+
+                }
+
+
+
             }
 
             public DataSet loadAudioData(){
 //                InputStream inputStream = new
-                DataSet dataList = new DataSet();
+
                 Resources resources = getResources();
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
+                String[] split = fields[0].getName().split("_");
+                String buildingName = split[0]+"_"+split[1];
+                DataSet dataList = new DataSet(buildingName);
                 for(int i = 0; i<fields.length;i++){
-                    String modelName = fields[i].getName().split("_")[2].split("\\.")[0];
+                    String label = fields[i].getName().split("_")[2].split("\\.")[0];
                     System.out.println();
                     int rID = 0;
                     try {
@@ -141,27 +189,40 @@ public class MainActivity extends AppCompatActivity {
 
                     //return the output stream as a String
                     String output = oS.toString();
-                    String[] numbers = output.substring(0, 100*4410).split("\n");
-                    short[] shorts = new short[numbers.length];
-                    Log.i("Label", modelName);
-                    for(int j = 0; j<numbers.length; j++){
-                        String number = numbers[j].replace("\r", "");
-                        short shortNum = Short.parseShort(number);
-                        shorts[j] = shortNum;
+                    Data data = new Data("Ewi", label);
+                    String[] specrograms = output.split("B");
+                    for(String specrogram: specrograms){
+                        if(specrogram.length()<10){
+                            break;
+                        }
+                        String[] rows = specrogram.split("A");
+                        int n = 0;
+                        float[][][][] spectr = new float[1][5][32][1];
+                        for(String row: rows){
+                            int m = 0;
+                            String[] numbers = row.split("\r\n");
+                            if(numbers.length == 0 || numbers.length == 1){
+                                break;
+                            }
+                            for(String number: numbers){
+                                if(number.length() == 0) {
+                                    break;
+                                }
+                                float shortNum = Float.parseFloat(number);
+                                spectr[0][n][m][0] = shortNum;
+                                m++;
+                            }
+                            n++;
+                        }
+                        DataChunk dataChunk = new DataChunk(buildingName, label);
+                        dataChunk.setSpetrogram(spectr);
+                        data.getDataChunkList().add(dataChunk);
                     }
-                    Data data = new Data("Ewi", modelName);
-                    data.addData(shorts);
+
                     dataList.addData(data);
 
                 }
 
-//                short[] data = new short[4410*504];
-//                for(int i=0; i<4410*504; i++){
-//                    data[i]=100;
-//                    if(i%4410==2200){
-//                        data[i] = 15000;
-//                    }
-//                }
                 return dataList;
             }
         });

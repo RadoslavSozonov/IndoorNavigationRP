@@ -35,10 +35,14 @@ public class Data {
 
             }
             DataChunk dataChunk = new DataChunk(this.building, this.label);
-            dataChunk.createSpectrogram(chunk);
+//            dataChunk.createSpectrogram(chunk);
             dataChunkList.add(dataChunk);
         }
 
+    }
+
+    public int getSize(){
+        return dataChunkList.size();
     }
 
     public int findOffset(short[] audioData){

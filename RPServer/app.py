@@ -39,6 +39,32 @@ def create_spectrogram(array, filename):
     plt.savefig(filename)
 
 
+@app.route('/convert_wav_to_spectrograms')
+def convert_wav_to_spectrograms():
+    for place in os.listdir("wav_files/"):
+        if not place.__contains__("EWI"):
+            continue
+        spectrogramCreator = SpectogramCreator()
+        samplerate, wav_array = wavfile.read('wav_files/'+place)
+        np_arr = np.asarray(wav_array, dtype=np.int16)
+        chirp_sample_offset = compute_offset(np_arr)
+        with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
+            for i in range(50):
+                start_rate = int((i+2) * interval_rate + chirp_sample_offset)
+                sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+                spectrogram = spectrogramCreator.createSpectrogramScipyTest(sliced)
+                # print(sliced)
+                for row in spectrogram:
+                    for element in row:
+                        f.write(f"{element}\n")
+                    f.write(f"A\n")
+                f.write(f"B\n")
+
+        # np_arr = np.array(wav_array)
+        # np.savetxt('text_files/'+place.split(".")[0]+".txt", np_arr, delimiter=',')
+    return "Done"
+
+
 @app.route('/convert_wav_to_text_file')
 def convert_wav_to_text_file():
     for place in os.listdir("wav_files/"):
@@ -46,7 +72,7 @@ def convert_wav_to_text_file():
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
         with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
-            for line in wav_array:
+            for line in wav_array[:4410*100]:
                 f.write(f"{line}\n")
         # np_arr = np.array(wav_array)
         # np.savetxt('text_files/'+place.split(".")[0]+".txt", np_arr, delimiter=',')
@@ -76,6 +102,12 @@ def add_room():
 def hello_world():
     return 'Hello World!'
 
+@app.route("/play_ground")
+def play_ground():
+    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
+    np_arr = np.asarray(wav_array, dtype=np.int16)
+    chirp_sample_offset = compute_offset(np_arr)
+    return str(chirp_sample_offset)
 
 @app.route('/load_data_db')
 def load_data_db():  # put application's code here

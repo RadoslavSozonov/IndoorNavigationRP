@@ -8,12 +8,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ModelManager {
-    private Model model;
+    private ModelInterface model;
     private DataSet dataSet;
     private List<Integer> labelsList;
     private Map<String, Integer> labelMap;
 
-    public ModelManager(Model model, DataSet dataSet ) {
+    public ModelManager(ModelInterface model, DataSet dataSet ) {
         this.model = model;
         List<String> labelList = dataSet.getDataset().stream().map(Data::getLabel).collect(Collectors.toList());
         this.dataSet = dataSet;
@@ -24,11 +24,11 @@ public class ModelManager {
 
     }
 
-    public Model getModel() {
+    public ModelInterface getModel() {
         return model;
     }
 
-    public void setModel(Model model) {
+    public void setModel(ModelInterface model) {
         this.model = model;
     }
 
@@ -68,9 +68,9 @@ public class ModelManager {
         );
     }
 
-    public void evaluateModel(){
+    public float evaluateModel(){
         List<DataChunk> dataChunkList = dataSet.getDataset().stream().flatMap(x->x.getDataChunkList().stream()).collect(Collectors.toList());
-        this.model.evaluate(
+        return this.model.evaluate(
                 dataChunkList.stream().map(DataChunk::getSpetrogram).collect(Collectors.toList()),
                 dataChunkList.stream().map(x->labelMap.get(x.getLabel())).collect(Collectors.toList())
         );
