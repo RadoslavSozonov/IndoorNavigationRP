@@ -120,7 +120,7 @@ class AcousticClassifier:
             else:
                 return "Model is not trained yet"
     def get_int_to_label(self):
-        return self.int_to_label
+        return np.asarray(self.int_to_label)
     def classify(self, sample):
         with self.training_lock:
             if self.model_trained:

@@ -16,7 +16,7 @@ import constants
 import os
 import json
 from sorcery import dict_of
-from combined_classifier import weighted_average, two_step, wifi_top_k, weighted_average_test_accuracy, two_step_test_accuracy, wifi_top_k_test_accuracy
+from combined_classifier import weighted_average, two_step, wifi_top_k, weighted_average_test_accuracy, two_step_test_accuracy, wifi_top_k_test_accuracy, acoustic_top_k, acoustic_top_k_test_accuracy, wifi_top_k_to_string, acoustic_top_k_to_string
  
 
 matplotlib.use('Agg')
@@ -59,11 +59,11 @@ def find_first_chirp(arr, filename):
     # t = t[chirp_cut_off:]
     # Sxx = Sxx[:,chirp_cut_off:]
     # # extract the maximum
-    plt.pcolormesh(t, f, Sxx, shading='gouraud')
+    plt.pcolormesh(t, f, Sxx, shading='nearest')
     plt.axvline(x=time_of_cut_off, color='r')
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
-    plt.savefig(filename)
+    plt.savefig(filename, bbox_inches="tight")
     plt.clf()
     # Returns at which point in the sample is the center of the chirp
     return int(time_of_cut_off * constants.sample_rate )
@@ -76,10 +76,9 @@ def create_spectrogram(array, filename):
     Sxx = Sxx[high_frequency_indices]
 
     # Plot the spectrogram and save it
-    plt.pcolormesh(t, f, Sxx, shading='gouraud')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.savefig(filename)
+    plt.pcolormesh(t, f, Sxx, shading='nearest')
+    plt.axis('off')
+    plt.savefig(filename, bbox_inches="tight", pad_inches=0)
 
     # Clear the plot
     plt.clf()
@@ -87,9 +86,11 @@ def create_spectrogram(array, filename):
     # After saving, read the image and extract the graph from the figure
     time.sleep(0.1)
     rgb = cv2.imread(filename)
-    rgb = rgb[59:428, 80:579]
+    # rgb = rgb[59:428, 80:579]
     rgb = cv2.resize(rgb, (32, 5))
     not_rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+    scale = 255/np.max(not_rgb)
+    not_rgb = (not_rgb * scale).astype(np.uint8)
     cv2.imwrite(filename, not_rgb)
 
 
@@ -118,13 +119,15 @@ def multi_classify(np_arr, wifi_list):
     wifi_prediction = [wifi_model.classify(wifi_sample)]
     weighted_average_prediction = [int_to_label[weighted_average(acoustic_model, wifi_model, constants.acoustic_weight, acoustic_sample, wifi_sample)]]
     two_step_prediction = [int_to_label[two_step(acoustic_model, wifi_model, constants.top_k, acoustic_sample, wifi_sample)]]
-    wifi_top_k_prediction = int_to_label[wifi_top_k(wifi_model, constants.top_k, wifi_sample)].tolist()
+    wifi_top_k_prediction = wifi_top_k_to_string(wifi_model, constants.top_k, wifi_sample)
+    acoustic_top_k_prediction = acoustic_top_k_to_string(acoustic_model, constants.top_k, acoustic_sample)
     prediction_object = dict_of(
         acoustic_prediction,
         wifi_prediction,
         weighted_average_prediction,
         two_step_prediction,
-        wifi_top_k_prediction
+        wifi_top_k_prediction,
+        acoustic_top_k_prediction
     )
     return prediction_object
 
@@ -263,7 +266,16 @@ def cross_corelation(arr, filename=None):
 
 if __name__ == "__main__":
 
-    train_classifiers()
+
+    # for room_label in next(os.walk('./metadata/pulse/'))[1]:
+    #     full_path = './metadata/pulse' + '/' + room_label
+    #     files = (file for file in os.listdir(full_path) 
+    #             if os.path.isfile(os.path.join(full_path, file)))
+    #     for sample in files:
+    #         # get the image, create a label, and then add it to the list
+    #         rate, np_arr = read(full_path + '/' +sample)
+    #         create_training_set(np_arr, "pulse", room_label)
+    # train_classifiers()
     # today = datetime.now()
     # classify_date = today.strftime("%b-%d-%Y-%H-%M-%S")
 

@@ -14,7 +14,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
+import java.util.TreeMap;
 
 
 public class ServerCommunication {
@@ -128,13 +128,15 @@ public class ServerCommunication {
 
     }
 
-    public static String recognizeRoom(Room room, String ip) {
+    public static Map<String, String > recognizeRoom(Room room, String ip) {
         URL url = null;
 
         try {
             url = new URL("http://" + ip +":5000/recognize_room");
         } catch (MalformedURLException e) {
-            return "server URL not found";
+            TreeMap <String, String> error = new TreeMap<>();
+            error.put("error", "server not found");
+            return error;
         }
 
         try {
@@ -162,22 +164,25 @@ public class ServerCommunication {
                 Map<String, String[]> rooms = new Gson().fromJson(json_string, building_map_type);
 
                 String final_list = "";
+                Map<String, String > classifiers = new TreeMap<>();
                 for(Map.Entry<String, String[]> entry: rooms.entrySet()) {
-                    if(entry.getKey().equals("wifi_top_k_prediction")) {
-                        final_list += entry.getKey() + ":\n" + Arrays.toString(entry.getValue()) + "\n";
-                        continue;
+                    String output = "";
+                    for (String str : entry.getValue()) {
+                        output += str + "\n";
                     }
-                    final_list += entry.getKey() + ":\n" + entry.getValue()[0] + "\n" +"-----------------------------------------------\n";
-
+                    classifiers.put(entry.getKey(), output);
                 }
-                return final_list;
+                return classifiers;
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return "Server IO error";
+            TreeMap <String, String> error = new TreeMap<>();
+            error.put("error", "server IO error");
         }
 
-        return "Server error";
+        TreeMap <String, String> error = new TreeMap<>();
+        error.put("error", "server idk error");
+        return error;
     }
 }
 

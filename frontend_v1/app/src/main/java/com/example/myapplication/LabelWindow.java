@@ -262,7 +262,7 @@ public class LabelWindow extends Activity {
             @Override
             public void onClick(View v) {
                 if (!training) {
-
+                    unregisterReceiver(wifiScanReceiver);
                     finish();
                 }
             }

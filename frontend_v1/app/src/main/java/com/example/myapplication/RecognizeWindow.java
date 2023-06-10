@@ -27,6 +27,7 @@ import com.example.myapplication.AudioTrack.ChirpEmitterBisccitAttempt;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
@@ -41,6 +42,12 @@ public class RecognizeWindow extends Activity {
 
         // Get layout components
         TextView popup_text = (TextView) findViewById(R.id.popup_text);
+        TextView acoustic_text = (TextView) findViewById(R.id.acoustic_text);
+        TextView wifi_text = (TextView) findViewById(R.id.wifi_text);
+        TextView weighted_text = (TextView) findViewById(R.id.weighted_text);
+        TextView two_step_text = (TextView) findViewById(R.id.two_step_text);
+        TextView wifi_top_text = (TextView) findViewById(R.id.wifi_top_text);
+        TextView acoustic_top_text = (TextView) findViewById(R.id.acoustic_top_text);
         Intent intent = getIntent();
         String server_ip = intent.getStringExtra("server_ip");
 
@@ -125,8 +132,40 @@ public class RecognizeWindow extends Activity {
                 listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
                 audioRecord.stop();
                 audioRecord.release();
-                String label = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown", wifi_list), server_ip);
-                runOnUiThread(() -> popup_text.setText(label));
+                Map<String, String> classifiers = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown", wifi_list), server_ip);
+
+                runOnUiThread(() -> {
+                    for(Map.Entry<String, String> entry: classifiers.entrySet()) {
+
+                        switch (entry.getKey()) {
+                            case "acoustic_prediction":
+                                acoustic_text.setText(entry.getValue());
+                                break;
+                            case "wifi_prediction":
+                                wifi_text.setText(entry.getValue());
+                                break;
+                            case "weighted_average_prediction":
+                                weighted_text.setText(entry.getValue());
+                                break;
+                            case "two_step_prediction":
+                                two_step_text.setText(entry.getValue());
+                                break;
+                            case "wifi_top_k_prediction":
+                                wifi_top_text.setText(entry.getValue());
+                                break;
+                            case "acoustic_top_k_prediction":
+                                acoustic_top_text.setText(entry.getValue());
+                                break;
+                            case "error":
+                                popup_text.setText(entry.getValue());
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+
+                });
             }
         }).start();
 
@@ -139,7 +178,7 @@ public class RecognizeWindow extends Activity {
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
 
-        getWindow().setLayout((int) (width * 0.8), (int) (height * 0.8));
+        getWindow().setLayout((int) (width * 0.9), (int) (height * 0.8));
 
         WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
         layoutParams.dimAmount = 0.35f;
