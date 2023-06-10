@@ -275,7 +275,7 @@ if __name__ == "__main__":
     #         # get the image, create a label, and then add it to the list
     #         rate, np_arr = read(full_path + '/' +sample)
     #         create_training_set(np_arr, "pulse", room_label)
-    # train_classifiers()
+    train_classifiers()
     # today = datetime.now()
     # classify_date = today.strftime("%b-%d-%Y-%H-%M-%S")
 
