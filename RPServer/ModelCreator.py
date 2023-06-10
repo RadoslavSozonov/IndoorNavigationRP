@@ -15,6 +15,7 @@ from DeepModels.RNNModel import RNNModel
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pyRAPL
 from datetime import datetime
 
 from DeepModels.SVMModel import SVMModel
@@ -119,11 +120,13 @@ class ModelCreator:
             model_name += str(layer["units"]) + "_"
         date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
         model_name += date + "_" + building
-
+        pyRAPL.setup()
+        meter = pyRAPL.Measurement('bar')
+        meter.begin()
         params = cnn_model.create_new_model(model_name, conv_pool_layers_info, dense_layers_info, labels_num=labelsN,
                                             input_shape=(5, 32, 1))
         self.execute_model_train_and_prediction(cnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, meter=meter)
 
     def create_and_train_dnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
                              labels, model_batches, building):
@@ -136,10 +139,12 @@ class ModelCreator:
             model_name += str(layer["units"]) + "_"
         date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
         model_name += date + "_" + building
-
+        pyRAPL.setup()
+        meter = pyRAPL.Measurement('bar')
+        meter.begin()
         params = dnn_model.create_new_model(model_name, dense_layers_info, labelsN)
         self.execute_model_train_and_prediction(dnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, meter=meter)
 
     def create_and_train_rnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
                              labels, model_batches, building):
@@ -157,31 +162,13 @@ class ModelCreator:
             model_name += str(layer["units"]) + "_"
         date = datetime.now().strftime('%Y-%m-%d %H:%M').replace(" ", "_").replace(":", "_")
         model_name += date + "_" + building
+        pyRAPL.setup()
+        meter = pyRAPL.Measurement('bar')
+        meter.begin()
         params = rnn_model.create_new_model(model_name, dense_layers_info, units=lstm_layers_info, labels_num=labelsN,
                                             input_shape=(5, 32))
         self.execute_model_train_and_prediction(rnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params)
-
-    def create_and_train_dbn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, labels):
-        dbn_model = DBNModel()
-
-        dbn_model.create_new_model(
-            model_name,
-            model_info["hidden_layers_structure"],
-            model_info["learning_rate_rbm"],
-            model_info["learning_rate"],
-            model_info["n_epochs_rbm"],
-            model_info["n_iter_backprop"],
-            model_info["batch_size"],
-            model_info["activation_function"],
-            model_info["dropout_p"],
-        )
-
-        dbn_model.train(
-            model_name,
-            X_train,
-            y_train
-        )
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, meter=meter)
 
     def layers_creator(self, name, model_info):
         layers_info = []
@@ -191,7 +178,7 @@ class ModelCreator:
         return layers_info
 
     def execute_model_train_and_prediction(self, model, model_name, X_train, y_train, X_test, y_test, labels, params, epochs=20,
-                                           model_batches=32):
+                                           model_batches=32, meter=None):
         _, _, time = model.train(
             model_name,
             X_train,
@@ -201,13 +188,14 @@ class ModelCreator:
             epochs=epochs,
             batch_size=model_batches
         )
+        meter.end()
         results = model.predict(model_name, X_test)
         # print(results)
         # print(np.array(results).size)
         y_pred = [np.argmax(x) for x in results]
         acc = accuracy_score(y_test, y_pred)
         print(acc)
-        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60)
+        self.confusion_matrix_generator(model_name + "_" + str(round(acc, 3)), y_test, y_pred, labels, params, time/60, meter)
 
     def shuffle(self, spectrograms, encoded_labels):
 
@@ -221,7 +209,8 @@ class ModelCreator:
 
         return shuffled_list
 
-    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time):
+    def confusion_matrix_generator(self, name, y_act, y_pred, class_names, params, time, meter):
+        print(meter.result)
         cm = confusion_matrix(y_act, y_pred)
         fig = plt.figure(figsize=(16, 14))
         ax = plt.subplot()
