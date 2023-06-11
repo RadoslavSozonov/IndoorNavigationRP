@@ -233,8 +233,8 @@ class ModelCreator:
         name += "_" + str(params) + "_" + str(round(time, 2))
         plt.title(name, fontsize=20)
         # print(history.history)
-        plt.savefig("confusion_matrices/" + name + ".png")
-        # plt.savefig("confusion_matrices/" + name + "_" + str(energy) + "mWH.png")
+        # plt.savefig("confusion_matrices/" + name + ".png")
+        plt.savefig("confusion_matrices/" + name + "_" + str(energy) + "mWH.png")
         plt.clf()
         train_loss = history.history['loss']
         val_loss = history.history['val_loss']

@@ -1,3 +1,5 @@
+import pickle
+
 from DeepModels.RNNSingelton import RNNSingelton
 from os import listdir
 import tensorflow as tf
@@ -77,7 +79,8 @@ class RNNModel(RNNSingelton):
             epochs=epochs
         )
         print(history)
-        self.rnn_models[name_of_model].save("models/rnn_models/" + name_of_model + ".h5")
+        pickle.dump(self.rnn_models[name_of_model], open("models/rnn_models/" + name_of_model + ".pickle", "wb"))
+        # self.rnn_models[name_of_model].save("models/rnn_models/" + name_of_model + ".h5")
         return history, self.rnn_models[name_of_model], int(time.time()-start_time)
 
     def predict(self, name_of_model, input_image):
@@ -102,10 +105,14 @@ class RNNModel(RNNSingelton):
     def compress(self, path):
         for model_name in listdir(path):
             model = self.models.load_model(path+model_name)
+
             #Create a TFLite Converter Object from model we created
             converter = tf.lite.TFLiteConverter.from_keras_model(model=model)
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
+
             #Create a tflite model object from TFLite Converter
             tfmodel = converter.convert()
+
             # Save TFLite model into a .tflite file
             model_new_name = "rnn_"+model_name.split(".")[0].replace("-", "_")
             open("compressed_models/"+model_new_name+".tflite", "wb").write(tfmodel)
