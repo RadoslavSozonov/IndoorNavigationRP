@@ -73,3 +73,15 @@ class DNNModel(DNNSingelton):
             # print("dnn_" + model_name.split(".")[0])
             self.dnn_models["dnn_"+model_name.split(".")[0].replace("-", "_")] = model
         # print(self.dnn_models)
+
+
+    def compress(self, path):
+        for model_name in listdir(path):
+            model = self.models.load_model(path+model_name)
+            #Create a TFLite Converter Object from model we created
+            converter = tf.lite.TFLiteConverter.from_keras_model(model=model)
+            #Create a tflite model object from TFLite Converter
+            tfmodel = converter.convert()
+            # Save TFLite model into a .tflite file
+            model_new_name = "dnn_"+model_name.split(".")[0].replace("-", "_")
+            open("compressed_models/"+model_new_name+".tflite", "wb").write(tfmodel)
