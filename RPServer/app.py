@@ -263,6 +263,13 @@ def initialize_models():
     LinearClassificationModel().load_models("models/sgd_models/")
     return "done"
 
+@app.route('/compress_models')
+def compress_models():
+    DNNModel().compress("models/dnn_models/")
+    CNNModel().compress("models/cnn_models/")
+    RNNModel().compress("models/rnn_models/")
+    return "done"
+
 if __name__ == '__main__':
     app.run(host="192.168.56.1", port=5000, debug=True)
 
