@@ -144,7 +144,7 @@ class ModelCreator:
         start_energy = psutil.sensors_battery().percent
         params = dnn_model.create_new_model(model_name, dense_layers_info, labelsN)
         self.execute_model_train_and_prediction(dnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, start_energy=start_energy)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, energy=start_energy)
 
     def create_and_train_rnn(self, model_name, model_info, labelsN, X_train, X_test, y_train, y_test, model_epochs,
                              labels, model_batches, building):
@@ -167,7 +167,7 @@ class ModelCreator:
         params = rnn_model.create_new_model(model_name, dense_layers_info, units=lstm_layers_info, labels_num=labelsN,
                                             input_shape=(5, 32))
         self.execute_model_train_and_prediction(rnn_model, model_name, X_train, y_train, X_test, y_test,
-                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, start_energy=start_energy)
+                                                epochs=model_epochs, labels=labels, model_batches=model_batches, params=params, energy=start_energy)
 
     def layers_creator(self, name, model_info):
         layers_info = []
@@ -233,7 +233,8 @@ class ModelCreator:
         name += "_" + str(params) + "_" + str(round(time, 2))
         plt.title(name, fontsize=20)
         # print(history.history)
-        plt.savefig("confusion_matrices/" + name + "_" + energy + "mWH.png")
+        plt.savefig("confusion_matrices/" + name + ".png")
+        # plt.savefig("confusion_matrices/" + name + "_" + str(energy) + "mWH.png")
         plt.clf()
         train_loss = history.history['loss']
         val_loss = history.history['val_loss']

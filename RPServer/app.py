@@ -38,6 +38,39 @@ def create_spectrogram(array, filename):
     plt.xlabel('Time [sec]')
     plt.savefig(filename)
 
+@app.route('/convert_wav_to_spectrograms')
+def convert_wav_to_spectrograms():
+    for place in os.listdir("wav_files/"):
+        if not place.__contains__("EWI"):
+            continue
+        spectrogramCreator = SpectogramCreator()
+        samplerate, wav_array = wavfile.read('wav_files/'+place)
+        np_arr = np.asarray(wav_array, dtype=np.int16)
+        chirp_sample_offset = compute_offset(np_arr)
+        with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
+            for i in range(50):
+                start_rate = int((i+2) * interval_rate + chirp_sample_offset)
+                sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+                spectrogram = spectrogramCreator.createSpectrogramScipyTest(sliced)
+                # print(sliced)
+                for row in spectrogram:
+                    for element in row:
+                        f.write(f"{element}\n")
+                    f.write(f"A\n")
+                f.write(f"B\n")
+
+        # np_arr = np.array(wav_array)
+        # np.savetxt('text_files/'+place.split(".")[0]+".txt", np_arr, delimiter=',')
+    return "Done"
+
+def save_spectrogram_to_txt(spectrogram, name):
+    with open('text_files/' + name + ".txt", 'a') as f:
+        # print(sliced)
+        for row in spectrogram:
+            for element in row:
+                f.write(f"{element}\n")
+            f.write(f"A\n")
+        f.write(f"B\n")
 
 @app.route('/convert_wav_to_text_file')
 def convert_wav_to_text_file():
@@ -45,7 +78,7 @@ def convert_wav_to_text_file():
         if not place.__contains__("EWI"):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
-        with open('text_files/'+place.split(".")[0]+".txt", 'w') as f:
+        with open('text_files/'+place.split(".")[0]+".txt", 'a') as f:
             for line in wav_array:
                 f.write(f"{line}\n")
         # np_arr = np.array(wav_array)
@@ -92,7 +125,7 @@ def load_data_db():  # put application's code here
     np_arr = np.asarray(wav_array, dtype=np.int16)
     chirp_sample_offset = compute_offset(np_arr)
     for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI7"):
+        if not place.__contains__("EWI7_06"):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
         np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
@@ -103,7 +136,8 @@ def load_data_db():  # put application's code here
         for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
             start_rate = int((i+1) * interval_rate + chirp_sample_offset)
             sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-            spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI7_06", i)
+            spectrum = spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI7_06", i)
+            save_spectrogram_to_txt(spectrum, place.split(".")[0])
 
     return 'Loaded!'
 

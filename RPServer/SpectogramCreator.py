@@ -90,13 +90,14 @@ class SpectogramCreator:
         max_number = np.max(spectrum)
         spectrum = (spectrum / max_number) * 255
         Firebase().upload_to_real_time_database(label_building, label_room, spectrum)
-        if 4 <= i <= 10:
-            date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
-            cv2.imwrite("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png", spectrum)
-            # print(spectrum[2])
-            image = Image.open("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png")
-            new_image = image.resize((320, 50))
-            new_image.save("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png")
+        return spectrum
+        # if 4 <= i <= 10:
+        #     date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
+        #     cv2.imwrite("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png", spectrum)
+        #     # print(spectrum[2])
+        #     image = Image.open("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png")
+        #     new_image = image.resize((320, 50))
+        #     new_image.save("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png")
 
 
 
