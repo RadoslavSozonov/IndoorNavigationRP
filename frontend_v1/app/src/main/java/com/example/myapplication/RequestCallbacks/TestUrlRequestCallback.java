@@ -11,6 +11,7 @@ import org.chromium.net.UrlResponseInfo;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -66,11 +67,14 @@ public class TestUrlRequestCallback extends UrlRequest.Callback{
     @Override
     public void onSucceeded(UrlRequest request, UrlResponseInfo info) {
 //        Log.i(TAG, "onSucceeded method called.");
-        long endTime = System.currentTimeMillis();
+        long endTime = ZonedDateTime.now().toInstant().toEpochMilli();
+//        System.out.println(endTime);
         long responseTime = endTime - ResponseTimes.startTime;
-        ResponseTimes.requestResponseTime.add((float) (responseTime/1000));
+//        System.out.println(responseTime);
+        ResponseTimes.requestResponseTime.add((float) (responseTime));
         float response = Float.parseFloat(responseData.toString());
         ResponseTimes.backendResponseTime.add(response);
+        ResponseTimes.stay=false;
     }
 
     @Override

@@ -16,6 +16,7 @@ from DeepModels.RNNModel import RNNModel
 from ModelCreator import ModelCreator
 from SpectogramCreator import SpectogramCreator
 import os
+from firebaseConfig import Firebase
 from datetime import datetime
 
 app = Flask(__name__)
@@ -78,8 +79,8 @@ def convert_wav_to_text_file():
         if not place.__contains__("EWI"):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
-        with open('text_files/'+place.split(".")[0]+".txt", 'a') as f:
-            for line in wav_array:
+        with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
+            for line in wav_array[:100*4410]:
                 f.write(f"{line}\n")
         # np_arr = np.array(wav_array)
         # np.savetxt('text_files/'+place.split(".")[0]+".txt", np_arr, delimiter=',')
@@ -125,7 +126,7 @@ def load_data_db():  # put application's code here
     np_arr = np.asarray(wav_array, dtype=np.int16)
     chirp_sample_offset = compute_offset(np_arr)
     for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI7_06"):
+        if not place.__contains__("EWI9_06"):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
         np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
@@ -136,10 +137,49 @@ def load_data_db():  # put application's code here
         for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
             start_rate = int((i+1) * interval_rate + chirp_sample_offset)
             sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-            spectrum = spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI7_06", i)
+            spectrum = spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI9_06", i)
             save_spectrogram_to_txt(spectrum, place.split(".")[0])
 
     return 'Loaded!'
+
+@app.route('/eveluate')
+def evaluate():
+    model_name = request.args.get("model")
+    data_set = request.args.get("dataset")
+    models = {}
+    buildings_name = ["EWI7_06", "EWI8_06", "EWI9_06"]
+    if model_name == "all":
+        models.update(CNNModel().cnn_models)
+        models.update(RNNModel().rnn_models)
+        models.update(DNNModel().dnn_models)
+
+    if data_set == "all":
+
+        for building_name in buildings_name:
+            with open('text_files/' + building_name +"_results.txt", 'a') as f:
+                print(building_name)
+                data_set, labelsN = Firebase().get_from_real_time_database(building_name)
+                labels = [unit[0] for unit in data_set]
+                map_label_encoding = {}
+                value = 0
+                for label in labels:
+                    if label not in map_label_encoding:
+                        map_label_encoding[label] = value
+                        value += 1
+                spectrograms = [unit[1] for unit in data_set]
+                encoded_labels = [map_label_encoding[label] for label in labels]
+
+                data_x = np.array(spectrograms)
+                data_y = np.array(encoded_labels)
+
+                for model_name in models:
+                    print(model_name)
+                    loss, accuracy = models[model_name].evaluate(data_x, data_y, verbose=2)
+                    f.write(f"{model_name}: {accuracy}, {loss}\n")
+                f.write(f"\n")
+            f.close()
+            print("\n\n\n\n")
+    return "Done"
 
 @app.route('/predict_location')
 def predict_location():
@@ -156,7 +196,7 @@ def predict_location():
     for key in dictionary:
         big_array = dictionary[key][int(0):]
         np_arr = np.asarray(big_array, dtype=np.int16)
-        chirp_sample_offset = compute_offset(np_arr)
+        chirp_sample_offset = 0
         for i in range(1):
             # print("Kur")
             start_rate = int(i * interval_rate + chirp_sample_offset)

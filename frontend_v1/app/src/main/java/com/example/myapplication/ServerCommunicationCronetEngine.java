@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +35,7 @@ public class ServerCommunicationCronetEngine {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
-        ResponseTimes.startTime = System.currentTimeMillis();
+        ResponseTimes.startTime = ZonedDateTime.now().toInstant().toEpochMilli();;
         request.start();
 //        Log.i("BuildAndSendRequest", "request.start() executed");
 
