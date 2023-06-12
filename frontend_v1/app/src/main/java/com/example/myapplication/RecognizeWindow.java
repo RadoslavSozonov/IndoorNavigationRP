@@ -135,6 +135,7 @@ public class RecognizeWindow extends Activity {
                 Map<String, String> classifiers = ServerCommunication.recognizeRoom(new Room(listOfRecords, "Unknown", "Unknown", wifi_list), server_ip);
 
                 runOnUiThread(() -> {
+                    popup_text.setText("");
                     for(Map.Entry<String, String> entry: classifiers.entrySet()) {
 
                         switch (entry.getKey()) {

@@ -16,13 +16,14 @@ import constants
 import os
 import json
 from sorcery import dict_of
-from combined_classifier import weighted_average, two_step, wifi_top_k, weighted_average_test_accuracy, two_step_test_accuracy, wifi_top_k_test_accuracy, acoustic_top_k, acoustic_top_k_test_accuracy, wifi_top_k_to_string, acoustic_top_k_to_string
+from combined_classifier import WeightedAverage, TwoStep, wifi_top_k, wifi_top_k_test_accuracy, acoustic_top_k, acoustic_top_k_test_accuracy, wifi_top_k_to_string, acoustic_top_k_to_string
  
-
 matplotlib.use('Agg')
-acoustic_model = AcousticClassifier()
 db = LocalDatabase()
-wifi_model = WifiClassifier("SVM")
+acoustic_model = AcousticClassifier()
+wifi_model = WifiClassifier()
+weighted_model = WeightedAverage(acoustic_model, wifi_model, [])
+two_step_model = TwoStep(acoustic_model, wifi_model, [])
 
 
 def unique(list1):
@@ -117,8 +118,9 @@ def multi_classify(np_arr, wifi_list):
     wifi_sample = db.create_wifi_fingerprint(wifi_list)
     acoustic_prediction = [acoustic_model.classify(acoustic_sample)]
     wifi_prediction = [wifi_model.classify(wifi_sample)]
-    weighted_average_prediction = [int_to_label[weighted_average(acoustic_model, wifi_model, constants.acoustic_weight, acoustic_sample, wifi_sample)]]
-    two_step_prediction = [int_to_label[two_step(acoustic_model, wifi_model, constants.top_k, acoustic_sample, wifi_sample)]]
+    
+    weighted_average_prediction = [weighted_model.classify(acoustic_sample, wifi_sample)]
+    two_step_prediction = [two_step_model.classify(acoustic_sample, wifi_sample)]
     wifi_top_k_prediction = wifi_top_k_to_string(wifi_model, constants.top_k, wifi_sample)
     acoustic_top_k_prediction = acoustic_top_k_to_string(acoustic_model, constants.top_k, acoustic_sample)
     prediction_object = dict_of(
@@ -184,15 +186,32 @@ def create_wifi_training_set(wifi_list, building_label, room_label):
             outfile.write(json_object)
         count = 1 + count
 
-def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
-    wifi_zip = list(zip(wifi_test, wifi_label))
+def test_classifiers(acoustic_test_set, acoustic_test_labels, wifi_test_set, wifi_test_labels, acoustic_training_dataset, wifi_training_dataset):
+    wifi_accuracy = wifi_model.test_accuracy(wifi_test_set,wifi_test_labels)
+    acoustic_accuracy = acoustic_model.test_accuracy(acoustic_test_set, acoustic_test_labels)
+
+    weighted_model.set_int_to_label(acoustic_model.get_int_to_label())
+    two_step_model.set_int_to_label(acoustic_model.get_int_to_label())
+
+    weighted_accuracy = weighted_model.train(acoustic_training_dataset, wifi_training_dataset, (acoustic_test_set, acoustic_test_labels), (wifi_test_set, wifi_test_labels))
+    two_step_accuracy = two_step_model.train(acoustic_training_dataset, wifi_training_dataset, (acoustic_test_set, acoustic_test_labels), (wifi_test_set, wifi_test_labels))
+    wifi_top_k_accuracy = wifi_top_k_test_accuracy(wifi_model, constants.top_k, wifi_test_set, wifi_test_labels)
+    acoustic_top_k_accuracy = acoustic_top_k_test_accuracy(acoustic_model, constants.top_k, acoustic_test_set, wifi_test_labels)
+    print("WIFI MODEL ACCURACY: " + str(wifi_accuracy))
+    print("ACOUSTIC MODEL ACCURACY: " + str(acoustic_accuracy))
+    print("WEIGHTED AVERAGE ACCURACY: " + str(weighted_accuracy))
+    print("TWO STEP LOCALIZATION ACCURACY: " + str(two_step_accuracy))
+    print("ACOUSTIC TOP K ACCURACY: " + str(acoustic_top_k_accuracy))
+    print("WIFI TOP K ACCURACY: " + str(wifi_top_k_accuracy))
+
+def combine_dataset(wifi_set, wifi_labels, acoustic_set, acoustic_labels):
+
+    wifi_zip = list(zip(wifi_set, wifi_labels))
     wifi_zip.sort(key=lambda x: x[1])
-    acoustic_zip = list(zip(acoustic_test, acoustic_label))
+    acoustic_zip = list(zip(acoustic_set, acoustic_labels))
     acoustic_zip.sort(key=lambda x: x[1])
 
-
-    bins = np.bincount(wifi_label)
-
+    bins = np.bincount(wifi_labels)
 
     acoustic_combined = []
     wifi_combined = []
@@ -202,35 +221,40 @@ def test_classifiers(acoustic_test, acoustic_label, wifi_test, wifi_label):
         min_val = min(len(acoustic_data), len(wifi_data))
         acoustic_combined.extend(acoustic_data[:min_val])
         wifi_combined.extend(wifi_data[:min_val])
-    new_wifi_test = [a[0] for a in wifi_combined]
-    new_wifi_label = [a[1] for a in wifi_combined]
-    new_acoustic_test = np.asarray([a[0] for a in acoustic_combined])
-    new_acoustic_label = np.asarray([a[1] for a in acoustic_combined])
+    new_wifi_set = [a[0] for a in wifi_combined]
+    new_wifi_labels = [a[1] for a in wifi_combined]
+    new_acoustic_set = np.asarray([a[0] for a in acoustic_combined])
+    new_acoustic_labels = np.asarray([a[1] for a in acoustic_combined])
+    return new_wifi_set, new_wifi_labels, new_acoustic_set, new_acoustic_labels
 
-    wifi_accuracy = wifi_model.test_accuracy(new_wifi_test,new_wifi_label)
-    acoustic_accuracy = acoustic_model.test_accuracy(new_acoustic_test, new_acoustic_label)
-    weighted_accuracy = weighted_average_test_accuracy(acoustic_model, wifi_model, constants.acoustic_weight, new_acoustic_test, new_wifi_test, new_wifi_label)
-    two_step_accuracy = two_step_test_accuracy(acoustic_model, wifi_model, constants.top_k, new_acoustic_test, new_wifi_test, new_wifi_label)
-    top_k_accuracy = wifi_top_k_test_accuracy(wifi_model, constants.top_k, new_wifi_test, new_wifi_label)
-    print("WIFI MODEL ACCURACY: " + str(wifi_accuracy))
-    print("ACOUSTIC MODEL ACCURACY: " + str(acoustic_accuracy))
-    print("WEIGHTED AVERAGE ACCURACY: " + str(weighted_accuracy))
-    print("TWO STEP LOCALIZATION ACCURACY: " + str(two_step_accuracy))
-    print("TOP K ACCURACY: " + str(top_k_accuracy))
+
+def get_combined_dataset():
+    images, image_labels, acoustic_int_to_label = db.get_acoustic_training_set()
+    wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
+    acoustic_training_set, acoustic_temp_set, acoustic_training_labels , acoustic_temp_labels = train_test_split(images, image_labels, test_size=0.2, random_state=42)
+    wifi_training_set, wifi_test_set, wifi_training_labels, wifi_test_labels = train_test_split(wifis, wifi_labels, test_size=0.4, random_state=42)
+
+    acoustic_validation_set, acoustic_test_set, acoustic_validation_labels, acoustic_test_labels = train_test_split(acoustic_temp_set, acoustic_temp_labels, test_size=0.5, random_state=42)
+
+    new_wifi_training_set, new_wifi_training_labels, new_acoustic_training_set, new_acoustic_training_labels = combine_dataset(wifi_training_set, wifi_training_labels, acoustic_training_set, acoustic_training_labels)
+    new_wifi_test_set, new_wifi_test_labels, new_acoustic_test_set, new_acoustic_test_labels = combine_dataset(wifi_test_set, wifi_test_labels, acoustic_test_set, acoustic_test_labels)
+
+    acoustic_dataset = (acoustic_training_set, acoustic_training_labels, acoustic_validation_set, acoustic_validation_labels, new_acoustic_test_set, new_acoustic_test_labels)
+    wifi_dataset = (wifi_training_set, wifi_training_labels, new_wifi_test_set, new_wifi_test_labels)
+    acoustic_training_dataset = (new_acoustic_training_set, new_acoustic_training_labels)
+    wifi_training_dataset = (new_wifi_training_set, new_wifi_training_labels)
+    return acoustic_dataset, wifi_dataset, acoustic_int_to_label, wifi_int_to_label, acoustic_training_dataset, wifi_training_dataset
+    
 
 def train_classifiers(test_split=0.2): 
     room_amount = db.get_room_amount()
+    acoustic_dataset, wifi_dataset, acoustic_int_to_label, wifi_int_to_label, acoustic_training_dataset, wifi_training_dataset = get_combined_dataset()
 
-    images, image_labels, image_int_to_label = db.get_acoustic_training_set()
-    wifis, wifi_labels, wifi_int_to_label = db.get_wifi_training_set()
-    acoustic_dataset = train_test_split(images, image_labels, test_size=0.2, random_state=42)
-    wifi_dataset = train_test_split(wifis, wifi_labels, test_size=0.5, random_state=42)
+    acoustic_model.train(acoustic_dataset, acoustic_int_to_label, room_amount, "best_acoustic.h5") # 
+    wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount, "./models/best_wifi.sav") # 
 
-    acoustic_model.train(acoustic_dataset, image_int_to_label, room_amount)
-    wifi_model.train(wifi_dataset, wifi_int_to_label, room_amount)
+    test_classifiers(acoustic_dataset[4], acoustic_dataset[5], wifi_dataset[2], wifi_dataset[3], acoustic_training_dataset, wifi_training_dataset)
 
-    test_classifiers(acoustic_dataset[1], acoustic_dataset[3], wifi_dataset[1], wifi_dataset[3])
-        
 def cross_corelation(arr, filename=None):
 
     samples = (np.sin(2 * np.pi * np.arange(params.duration * params.sample_rate) * params.frequency / params.sample_rate)).astype(np.float32)

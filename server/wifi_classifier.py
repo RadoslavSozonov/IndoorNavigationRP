@@ -1,33 +1,72 @@
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV
 from sklearn import svm
 from threading import Lock
 from utils import create_confusion_matrix
-
-
 import numpy as np
+import pickle
+
+knn_param_grid = {
+    'n_neighbors': [1,2,3,4,5,6,7,8,9,10],  
+    'weights': ['uniform', 'distance']
+}
+
+svm_param_grid = {
+    'C': [0.1, 1, 10],
+    'kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
+    'gamma': ['scale', 'auto', 0.1, 1],
+    'degree': [2, 3, 4],
+    'class_weight': [None, 'balanced'],
+    'decision_function_shape': ['ovo', 'ovr']
+}
+
 
 class WifiClassifier:
-    def __init__(self, mode):
+    def __init__(self):
         self.int_to_label = []
-        self.mode = mode
         self.model = None
         self.training_lock = Lock()
         self.model_trained = False
-    def train(self, dataset, int_to_label, room_amount):
-        wifi_train, wifi_test, labels_train, labels_test = dataset
+    def train(self, dataset, int_to_label, room_amount, filename=None):
+        train_set, train_labels, validation_set, validation_labels= dataset
         self.int_to_label = int_to_label
         with self.training_lock:
-            if self.mode == "KNN":
-                self.model = KNeighborsClassifier(n_neighbors=1, probability=True)
-                self.model.fit(wifi_train, labels_train)
-            elif self.mode == "SVM":
-                self.model = svm.SVC(kernel='linear', probability=True)
-                self.model.fit(wifi_train, labels_train)
+            if filename == None:
+                knn_model = KNeighborsClassifier()
+                knn_grid_search = GridSearchCV(knn_model, knn_param_grid)
+                knn_grid_search.fit(train_set, train_labels)
+
+                svm_model = svm.SVC(probability=True)
+                svm_grid_search = GridSearchCV(svm_model, svm_param_grid)
+                svm_grid_search.fit(train_set, train_labels)
+                
+                best_knn_params = knn_grid_search.best_params_
+                best_svm_params = svm_grid_search.best_params_
+                best_knn_score = knn_grid_search.best_score_
+                best_svm_score = svm_grid_search.best_score_
+                print("KNN PARAMS: " + str(best_knn_params) + "\nACCURACY: " + str(best_knn_score))
+                print("SVM PARAMS: " + str(best_svm_params) + "\nACCURACY: " + str(best_svm_score))
+
+                if best_knn_score > best_svm_score:
+                    print("KNN CHOSEN")
+                    self.model = knn_grid_search.best_estimator_
+                else:
+                    print("SVM CHOSEN")
+                    self.model = svm_grid_search.best_estimator_
+
+                # knn_results = knn_grid_search.cv_results_
+                # svm_results = svm_grid_search.cv_results_
+                # knn_combinations = zip(knn_results['params'], knn_results['mean_test_score'])
+                # svm_combinations = zip(svm_results['params'], svm_results['mean_test_score'])
+                # for params, accuracy in knn_combinations:
+                #     print("Parameters:", params, "Accuracy:", accuracy)
+                # for params, accuracy in svm_combinations:
+                #     print("Parameters:", params, "Accuracy:", accuracy)
+
+                pickle.dump(self.model, open("./models/best_wifi.sav", 'wb'))
             else:
-                print("INVALID WIFI MODE NAME")
-                return
-        
+                self.model = pickle.load(open(filename, 'rb'))
             self.model_trained = True
 
     def classify(self, sample):
