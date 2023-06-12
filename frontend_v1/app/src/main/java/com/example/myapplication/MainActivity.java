@@ -44,6 +44,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -103,10 +104,28 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 DataSet dataSet = loadAudioData();
                 System.out.println("Data collected");
-                String[] modelNames = new String[]{"cnn_conv_16_32_dense_1024_2023_06_09_16_27_EWI7_06.tflite"};
-                String c = Context.BATTERY_SERVICE;
+                String[] modelNames = new String[]{
+                        "cnn_conv_16_32_dense_1024_2023_06_09_16_27_EWI7_06.tflite",
+                        "cnn_conv_32_32_dense_1024_2023_06_09_16_30_EWI7_06.tflite",
+                        "cnn_conv_32_64_128_dense_512_2023_06_09_16_40_EWI7_06.tflite",
+                        "cnn_conv_128_64_64_dense_1024_2023_06_09_16_33_EWI7_06.tflite",
+                        "cnn_conv_256_128_dense_1024_2023_06_09_16_45_EWI7_06.tflite",
+                        "cnn_conv_512_128_dense_512_2023_06_09_17_08_EWI7_06.tflite",
+                        "dnn_dense_256_512_256_2023_06_09_17_43_EWI7_06.tflite",
+                        "dnn_dense_256_512_1024_2023_06_09_17_49_EWI7_06.tflite",
+                        "dnn_dense_512_128_2048_512_2023_06_09_17_56_EWI7_06.tflite",
+                        "dnn_dense_512_256_256_64_2023_06_09_17_41_EWI7_06.tflite",
+                        "dnn_dense_1024_512_2023_06_09_17_45_EWI7_06.tflite",
+                        "dnn_dense_4096_16_2023_06_09_17_52_EWI7_06.tflite",
+                        "rnn_lstm_32_64_dense_1024_2023_06_11_09_42_EWI7_06.tflite",
+                        "rnn_lstm_64_64_dense_256_2023_06_11_09_35_EWI7_06.tflite",
+                        "rnn_lstm_64_128_dense_1024_2023_06_11_09_45_EWI7_06.tflite",
+                        "rnn_lstm_64_dense_1024_2023_06_11_09_40_EWI7_06.tflite",
+                        "rnn_lstm_128_dense_128_2023_06_11_09_38_EWI7_06.tflite",
+                        "rnn_lstm_256_128_dense_256_2023_06_11_09_49_EWI7_06.tflite"
+                };
                 BatteryManager mBatteryManager =
-                        (BatteryManager)activity.getSystemService(c);
+                        (BatteryManager)activity.getSystemService(Context.BATTERY_SERVICE);
 
                 for(String modelName: modelNames){
                     Model model = new Model(activity, modelName);
@@ -114,17 +133,17 @@ public class MainActivity extends AppCompatActivity {
                     int dataChunksSize = dataSet.dataChunksSize();
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         long startEnergy = mBatteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
-                        long startTime = Instant.now().getEpochSecond();
+                        long startTime = ZonedDateTime.now().toInstant().toEpochMilli();
                         float acc = modelManager.evaluateModel();
-                        long endTime = Instant.now().getEpochSecond();
+                        long endTime = ZonedDateTime.now().toInstant().toEpochMilli();
                         long endEnergy = mBatteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
-                        float averageDuration = (float) ((endTime - startTime)/60)/dataChunksSize;
+                        float averageDuration = (float) (endTime - startTime)/dataChunksSize;
                         float averageEnergy = (float) (endEnergy-startEnergy)/dataChunksSize;
                         String input = modelName+" "
                                 + acc +" "
-                                + Math.round(averageDuration*100)/100 +"m "
+                                + Math.round(averageDuration*100)/100 +"ms "
                                 + Math.round(averageEnergy*100)/100 +"nWh\n";
-                        System.out.println(input);
+                        Log.i("MODEL RESULTS", input);
                         OutputStreamWriter outputStreamWriter = null;
                         try {
                             outputStreamWriter = new OutputStreamWriter(activity.openFileOutput(dataSet.getBuilding()+".txt", Context.MODE_PRIVATE));
@@ -155,10 +174,17 @@ public class MainActivity extends AppCompatActivity {
                 Resources resources = getResources();
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
-                String[] split = fields[0].getName().split("_");
-                String buildingName = split[0]+"_"+split[1];
-                DataSet dataList = new DataSet(buildingName);
+
+                DataSet dataList = new DataSet("ewi9_06");
                 for(int i = 0; i<fields.length;i++){
+
+                    String[] split = fields[i].getName().split("_");
+                    String buildingName = split[0]+"_"+split[1];
+
+                    if(!buildingName.contains("ewi9_06")){
+                        continue;
+                    }
+
                     String label = fields[i].getName().split("_")[2].split("\\.")[0];
                     System.out.println();
                     int rID = 0;
