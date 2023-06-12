@@ -125,7 +125,36 @@ class LocalDatabase:
             room_list = []
         return buildings
 
-if __name__ == "__main__":
-    db = LocalDatabase()
 
-    db.get_wifi_training_set()
+import matplotlib.pyplot as plt
+import matplotlib
+
+if __name__ == "__main__":
+    wifi_fingerprints = []
+
+
+    for building_label in next(os.walk('./wifi'))[1]:
+        for room_label in next(os.walk('./wifi/' + building_label))[1]:
+            # get all wifi fingerprints for this room
+            full_path = './wifi/' + building_label + '/' + room_label + "/" 
+            full_label = building_label + ': ' + room_label
+            files = (file for file in os.listdir(full_path) 
+                    if os.path.isfile(os.path.join(full_path, file)))
+            for sample in files:
+                with open(full_path + '/' +sample, 'r') as openfile:
+                    # Reading from json file
+                    wifi_list = json.load(openfile)
+                    wifi_fingerprints.append(len(wifi_list["list"]))
+    print("mean " + str(np.mean(wifi_fingerprints)))
+    print("meadian " + str(np.median(wifi_fingerprints)))
+    print("min " + str(np.min(wifi_fingerprints)))
+    print("max " + str(np.max(wifi_fingerprints)))
+ 
+    matplotlib.rcParams.update({'font.size': 22})
+    # Creating plot
+    plt.xlabel("Pulse")
+    plt.ylabel("WiFi access point amount")
+    plt.boxplot(wifi_fingerprints)
+    
+    # show plot
+    plt.show()

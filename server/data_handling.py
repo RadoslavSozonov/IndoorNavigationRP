@@ -147,10 +147,6 @@ def create_training_set(np_arr, building_label, room_label, save_audio=True):
     if not os.path.exists(meta_data_directory):
         # Create a new directory because it does not exist
         os.makedirs(meta_data_directory)
-    # Save the audio as metadata
-    if save_audio:
-        write(meta_data_directory + '/audio-' + classify_date + '.wav', constants.sample_rate, np_arr.astype(np.int16))
-
 
     # Find the first chirp in the audio file and offset everything
     first_chirp_offset = find_first_chirp(np_arr, meta_data_directory + '/offset-' + classify_date + '.png')
