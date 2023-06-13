@@ -108,3 +108,10 @@ class SpectogramCreator:
         plt.title('Spectrogram')
         plt.savefig(filename)
         return
+    
+    def scatter(self, xP, yP, filename):
+        plt.clf()
+        plt.scatter(xP, yP)
+        # plt.ylim((0,1))
+        plt.savefig(filename)
+        return

@@ -1,6 +1,15 @@
 {
     "Config": {
-        "curIndex": 0
+        "curIndex": 1
     },
-    "Buildings": {}
+    "Buildings": {
+        "mock": {
+            "test": {
+                "data": [
+                    "database\\5094394.npy"
+                ],
+                "ID": 0
+            }
+        }
+    }
 }

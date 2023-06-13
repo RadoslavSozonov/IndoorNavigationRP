@@ -6,18 +6,18 @@ class SignalMock:
 
     def createMockInput(self, echo_delay):
         SAMPLE_RATE = 44100
-        DURATION = 5.0
+        DURATION = 1.0
         NOISE_AMPLITUDE = 0.1
-        CHIRP_DURATION = 0.05
+        CHIRP_DURATION = 0.015
         CHIRP_INTERVAL = 0.1
 
         SHORT_MAX_VALUE = 32767
 
         ECHO_DELAY = echo_delay  # Delay in seconds
-        ECHO_ATTENUATION = 0.4  # Attenuation factor for the echo signal
+        ECHO_ATTENUATION = 0.075  # Attenuation factor for the echo signal
 
         audio_length = int(SAMPLE_RATE * DURATION)
-        audio = np.zeros(audio_length, dtype=np.int16)
+        audio = np.zeros(audio_length, dtype=np.float32)
 
         relative_chirp_duration = int(CHIRP_DURATION * SAMPLE_RATE)  # Adjust the chirp duration as needed
         relative_interval_duration = int(CHIRP_INTERVAL * SAMPLE_RATE)  # Adjust the interval duration as needed
@@ -53,4 +53,7 @@ class SignalMock:
         # Normalize the audio to the maximum amplitude of a 16-bit signal
         max_amplitude = np.max(np.abs(audio_with_echo))
         normalized_audio = np.array(audio_with_echo / max_amplitude * SHORT_MAX_VALUE, dtype=np.int16)
-        return normalized_audio
+
+        arr01 = audio_with_echo[:] = [x / SHORT_MAX_VALUE for x in audio_with_echo]
+
+        return arr01

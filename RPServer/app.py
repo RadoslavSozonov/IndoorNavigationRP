@@ -1,7 +1,12 @@
 from flask import Flask, request 
 import json
 from scipy.io import wavfile
+from scipy.signal import find_peaks
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+
+matplotlib.use("Agg")
 
 from SpectogramCreator import SpectogramCreator
 from AudioFilter import AudioFilter
@@ -37,8 +42,9 @@ def mock_input():
     sample_name = request.args.get("name")
     echo_delay = float(request.args.get("delay"))
     sound_sample = signalMock.createMockInput(echo_delay)
+    pr = float(request.args.get("prominence"))
 
-    handle_input(sound_sample, sample_name, "mock")
+    handle_input(sound_sample, sample_name, "mock", pr)
     return "added " + sample_name
 
 @APP.route('/add_new_location_point', methods=['POST'])
@@ -49,13 +55,13 @@ def add_new_location_point():
     dictionary = json.loads(list_of_records)
     placeLabel = request.args.get("placeLabel")
     buildingLabel = request.args.get("buildingLabel")
-
+    
     for key in dictionary:
         dictionary[key] = [float(i) for i in dictionary[key].strip('][').split(', ')]
 
     sound_sample = dictionary['1']
 
-    return handle_input(sound_sample, placeLabel, buildingLabel)
+    return handle_input(sound_sample, placeLabel, buildingLabel, 0.05)
 
 @APP.route('/train_model', methods=['POST', 'GET'])
 def train_model():
@@ -100,20 +106,48 @@ def classify():
     print(f'Predicted Label: {predicted_label}')
     return predicted_label
 
-def handle_input(sound_sample, room, building):
-    filtered_sample =  audioFilter.apply_high_pass_filter(sound_sample, 9000)
-    # enveloped = audioFilter.smooth(audioFilter.envelope(filtered_sample))
+def handle_input(sound_sample, room, building, pr):
+    # filtered_sample = sound_sample
+    filtered_sample = audioFilter.apply_high_pass_filter(sound_sample, 9900)
+    enveloped = audioFilter.smooth(audioFilter.envelope(filtered_sample))
 
-    duration = 3
-    cnt = 0
-    window = duration * 44100
-    for i in range(0, len(filtered_sample) - window,  window):
-        print(len(filtered_sample[i: i+window]))
-        fy = spectogramCreator.generate_fourier_graph(filtered_sample[i: i+window], filename(building, room, "FOURIER_"+str(cnt)), False)
-        print(len(fy))
-        # ADD TO DATABASE
-        database.save_image(building, room, fy)
-        cnt += 1
+    # spectogramCreator.generate_audio_graph(filtered_sample, filename(building, room, "AUDIO"))
+    spectogramCreator.generate_audio_graph(enveloped, filename(building, room, "ENVELOPED"))
+    # spectogramCreator.generate_fourier_graph(enveloped, filename(building, room, "FOURIER"), False)
+
+    peaks, _ = find_peaks(enveloped, prominence=pr)
+
+    peaksf = peaks.astype(np.float32)
+
+    peaksf[:] = [x / len(enveloped) for x in peaks]
+
+    plt.clf()
+    # plt.figure(figsize=(30, 5))
+    plt.plot(enveloped)
+    plt.plot(peaks, enveloped[peaks], "x")
+    plt.savefig(filename(building, room, "ENVELOPED_PEAKS"))
+
+    dataset = []
+
+    for i in range(1, len(peaksf)):
+        dataset.append((peaksf[i] - peaksf[i-1], enveloped[peaks[i]]))
+    
+    average = np.zeros(int((peaks[1] - peaks[0]) * 1.5)) # multiply with factor to make sure within range
+
+    offset = 400
+
+    for i in range(1, len(peaks)):
+        curpeak = peaks[i-1] + offset
+        for x in range(curpeak, peaks[i] - offset):
+            average[x-curpeak] += enveloped[x]
+
+    average[:] = [x / (len(peaks) - 1) for x in average]
+
+    audioFilter.smooth(average)
+
+    plt.clf()
+    plt.plot(average)
+    plt.savefig(filename(building, room, "ENVELOPE_AVERAGE"))
 
     print("added room!")
     return "Success"

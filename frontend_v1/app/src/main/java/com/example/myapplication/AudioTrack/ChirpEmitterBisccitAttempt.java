@@ -41,7 +41,7 @@ public class ChirpEmitterBisccitAttempt {
         for (int i=0;i<audio.length;){
 
             for (int x=0;x<relativeChirpDuration && i<audio.length;x++, i++) {
-                double factor = 0.5 + 0.5 * Math.sin(2 * Math.PI * x / relativeChirpDuration - 0.5 * Math.PI);
+                double factor = Math.sin(Math.PI * x / relativeChirpDuration);
                 audio[i] = (short)(Short.MAX_VALUE * Math.sin(i * sinRate) * factor);
             }
 

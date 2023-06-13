@@ -19,6 +19,25 @@ class AudioFilter:
         # Apply the high-pass filter to the input signal
         return sps.lfilter(b, a, audio_data)
     
+    def apply_low_pass_filter(self, audio_data, cutoff_frequency):
+        # CUTOFF LOWER FREQUENCIES
+        sampling_rate = 44100  # Specify the sampling rate in Hz
+
+        # Convert the cutoff frequency to a normalized value
+        nyquist_frequency = 0.5 * sampling_rate
+        normalized_cutoff_frequency = cutoff_frequency / nyquist_frequency
+
+        # Design the high-pass filter
+        b, a = sps.butter(4, normalized_cutoff_frequency, btype='low', analog=False, output='ba')
+
+        # Apply the high-pass filter to the input signal
+        return sps.lfilter(b, a, audio_data)
+    
+    def apply_filter(self, audio_data):
+        b, a = sps.butter(1, 0.5)
+        filtered = sps.filtfilt(b, a, audio_data)
+        return filtered
+    
     def envelope(self, audio_data):
         sample_rate = 44100
         SHORT_MAX_VALUE = 32767
@@ -51,7 +70,7 @@ class AudioFilter:
         return envelope
 
     def smooth(self, audio_data):
-        N = 500
+        N = 250
         return np.convolve(audio_data, np.ones(N) / N, mode='valid')
         # window = 1000
         # res = []
