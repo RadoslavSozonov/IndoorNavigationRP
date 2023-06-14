@@ -19,6 +19,20 @@ class SpectogramCreator:
         plt.savefig(filename)
         return
     
+    def generate_mfccs_spectrogram(self, audio_data, filename):
+        plt.clf()
+        mfccs = librosa.feature.mfcc(y=audio_data, sr=44100, n_mfcc=40)
+        librosa.display.specshow(mfccs, sr=44100, x_axis='time', y_axis='hz')
+        plt.colorbar()
+        plt.savefig(filename)
+        return
+    
+    def generate_chroma_spectrogram(self, audio_data, filename):
+        plt.clf()
+        chromagram = librosa.feature.chroma_stft(y=audio_data, sr=44100, hop_length=512)
+        librosa.display.specshow(chromagram, x_axis='time', y_axis='chroma', hop_length=512, cmap='coolwarm')
+        plt.savefig(filename)
+    
     def generate_fourier_graph(self, audio_data, filename, smooth):
         N = len(audio_data)
         T = 1.0 / 44100

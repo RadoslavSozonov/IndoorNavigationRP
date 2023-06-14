@@ -112,42 +112,48 @@ def handle_input(sound_sample, room, building, pr):
     enveloped = audioFilter.smooth(audioFilter.envelope(filtered_sample))
 
     # spectogramCreator.generate_audio_graph(filtered_sample, filename(building, room, "AUDIO"))
-    spectogramCreator.generate_audio_graph(enveloped, filename(building, room, "ENVELOPED"))
+    # spectogramCreator.generate_audio_graph(enveloped, filename(building, room, "ENVELOPED"))
     # spectogramCreator.generate_fourier_graph(enveloped, filename(building, room, "FOURIER"), False)
+    spectogramCreator.generate_mfccs_spectrogram(filtered_sample, filename(building, room, "MFCCS"))
+    spectogramCreator.generate_chroma_spectrogram(filtered_sample, filename(building, room, "CHROMA"))
+    spectogramCreator.generate_black_white_spectogram(filtered_sample, filename(building, room, "SPECT"))
 
-    peaks, _ = find_peaks(enveloped, prominence=pr)
 
-    peaksf = peaks.astype(np.float32)
 
-    peaksf[:] = [x / len(enveloped) for x in peaks]
+    # peaks, _ = find_peaks(enveloped, prominence=pr)
 
-    plt.clf()
-    # plt.figure(figsize=(30, 5))
-    plt.plot(enveloped)
-    plt.plot(peaks, enveloped[peaks], "x")
-    plt.savefig(filename(building, room, "ENVELOPED_PEAKS"))
+    # peaksf = peaks.astype(np.float32)
 
-    dataset = []
+    # peaksf[:] = [x / len(enveloped) for x in peaks]
 
-    for i in range(1, len(peaksf)):
-        dataset.append((peaksf[i] - peaksf[i-1], enveloped[peaks[i]]))
+    # plt.clf()
+    # # plt.figure(figsize=(30, 5))
+    # plt.plot(enveloped)
+    # plt.plot(peaks, enveloped[peaks], "x")
+    # plt.savefig(filename(building, room, "ENVELOPED_PEAKS"))
+
+    # dataset = []
+
+    # for i in range(1, len(peaksf)):
+    #     dataset.append((peaksf[i] - peaksf[i-1], enveloped[peaks[i]]))
     
-    average = np.zeros(int((peaks[1] - peaks[0]) * 1.5)) # multiply with factor to make sure within range
+    # average = np.zeros(int((peaks[1] - peaks[0]))) # multiply with factor to make sure within range
 
-    offset = 400
+    # offset = 400
 
-    for i in range(1, len(peaks)):
-        curpeak = peaks[i-1] + offset
-        for x in range(curpeak, peaks[i] - offset):
-            average[x-curpeak] += enveloped[x]
+    # for i in range(1, len(peaks)):
+    #     curpeak = peaks[i-1] + offset
+    #     for x in range(curpeak, peaks[i] - offset):
+    #         average[x-curpeak] += enveloped[x]
 
-    average[:] = [x / (len(peaks) - 1) for x in average]
+    # average[:] = [x / (len(peaks) - 1) for x in average]
 
-    audioFilter.smooth(average)
+    # audioFilter.smooth(average)
 
-    plt.clf()
-    plt.plot(average)
-    plt.savefig(filename(building, room, "ENVELOPE_AVERAGE"))
+    # plt.clf()
+    # plt.figure(figsize=(5, 5))
+    # plt.plot(average)
+    # plt.savefig(filename(building, room, "ENVELOPE_AVERAGE"))
 
     print("added room!")
     return "Success"

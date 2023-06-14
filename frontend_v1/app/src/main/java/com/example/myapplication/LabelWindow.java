@@ -43,6 +43,9 @@ public class LabelWindow extends Activity {
         Button button_start = (Button) findViewById(R.id.button_submit);
         TextView progress = (TextView) findViewById(R.id.textView4);
 
+        TextView duration = (TextView) findViewById(R.id.duration);
+
+
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
         if (currentapiVersion > android.os.Build.VERSION_CODES.LOLLIPOP){
 
@@ -76,6 +79,8 @@ public class LabelWindow extends Activity {
                     sent_label.setText(label_text);
                     // Disable back button while labeling
                     training = true;
+
+                    Globals.LABEL_DURATION = Double.parseDouble(duration.getText().toString());
 
                     DataRecorder dataRecorder = new DataRecorder(Globals.LABEL_DURATION, getThis(), new LabelCallback(String.valueOf(label.getText()), String.valueOf(labelOfBuilding.getText())));
 
