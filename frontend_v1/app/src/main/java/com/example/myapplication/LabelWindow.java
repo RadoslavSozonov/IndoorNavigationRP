@@ -44,6 +44,7 @@ public class LabelWindow extends Activity {
         TextView progress = (TextView) findViewById(R.id.textView4);
 
         TextView duration = (TextView) findViewById(R.id.duration);
+        TextView frequency = (TextView) findViewById(R.id.frequency);
 
 
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
@@ -81,6 +82,7 @@ public class LabelWindow extends Activity {
                     training = true;
 
                     Globals.LABEL_DURATION = Double.parseDouble(duration.getText().toString());
+                    Globals.CHIRP_FREQUENCY = Integer.parseInt(frequency.getText().toString());
 
                     DataRecorder dataRecorder = new DataRecorder(Globals.LABEL_DURATION, getThis(), new LabelCallback(String.valueOf(label.getText()), String.valueOf(labelOfBuilding.getText())));
 

@@ -107,56 +107,49 @@ def classify():
     return predicted_label
 
 def handle_input(sound_sample, room, building, pr):
-    # filtered_sample = sound_sample
-    filtered_sample = audioFilter.apply_high_pass_filter(sound_sample, 9900)
-    enveloped = audioFilter.smooth(audioFilter.envelope(filtered_sample))
+    sound_sample = np.asarray(sound_sample, dtype=np.float32)
 
-    # spectogramCreator.generate_audio_graph(filtered_sample, filename(building, room, "AUDIO"))
-    # spectogramCreator.generate_audio_graph(enveloped, filename(building, room, "ENVELOPED"))
-    # spectogramCreator.generate_fourier_graph(enveloped, filename(building, room, "FOURIER"), False)
-    spectogramCreator.generate_mfccs_spectrogram(filtered_sample, filename(building, room, "MFCCS"))
-    spectogramCreator.generate_chroma_spectrogram(filtered_sample, filename(building, room, "CHROMA"))
-    spectogramCreator.generate_black_white_spectogram(filtered_sample, filename(building, room, "SPECT"))
+    # sound_sample = audioFilter.apply_high_pass_filter(sound_sample, 18500)
 
+    cutoffs = find_cutoffs(sound_sample, pr)
 
+    spectogramCreator.generate_black_white_spectogram(sound_sample, filename(building, room, "SPECT"))
 
-    # peaks, _ = find_peaks(enveloped, prominence=pr)
+    cnt = 0
+    for i in range(1, len(cutoffs), 2):
+        sub_sample = sound_sample[cutoffs[i-1]:cutoffs[i]]
 
-    # peaksf = peaks.astype(np.float32)
+        spectogramCreator.generate_black_white_spectogram(sub_sample, filename(building, room, "SPECT_"+str(cnt)))
+        # spectogramCreator.generate_mfccs_spectrogram(sound_sample[peaks[i-1]:peaks[i] - 400], filename(building, room, "MFCCS_"+str(i)))
+        # spectogramCreator.generate_chroma_spectrogram(sound_sample[peaks[i-1]:peaks[i] - 400], filename(building, room, "CHROMA_"+str(i)))
+        spectogramCreator.generate_spect(sub_sample, filename(building, room, "BW_SPECT_"+str(cnt)))
 
-    # peaksf[:] = [x / len(enveloped) for x in peaks]
+        cnt += 1
 
-    # plt.clf()
-    # # plt.figure(figsize=(30, 5))
-    # plt.plot(enveloped)
-    # plt.plot(peaks, enveloped[peaks], "x")
-    # plt.savefig(filename(building, room, "ENVELOPED_PEAKS"))
-
-    # dataset = []
-
-    # for i in range(1, len(peaksf)):
-    #     dataset.append((peaksf[i] - peaksf[i-1], enveloped[peaks[i]]))
-    
-    # average = np.zeros(int((peaks[1] - peaks[0]))) # multiply with factor to make sure within range
-
-    # offset = 400
-
-    # for i in range(1, len(peaks)):
-    #     curpeak = peaks[i-1] + offset
-    #     for x in range(curpeak, peaks[i] - offset):
-    #         average[x-curpeak] += enveloped[x]
-
-    # average[:] = [x / (len(peaks) - 1) for x in average]
-
-    # audioFilter.smooth(average)
-
-    # plt.clf()
-    # plt.figure(figsize=(5, 5))
-    # plt.plot(average)
-    # plt.savefig(filename(building, room, "ENVELOPE_AVERAGE"))
-
-    print("added room!")
+    print("OK")
     return "Success"
+
+def find_cutoffs(sound_sample, pr):
+    sound_sample = audioFilter.apply_high_pass_filter(sound_sample, 18500)
+    enveloped = audioFilter.smooth(audioFilter.envelope(sound_sample))
+    peaks, _ = find_peaks(enveloped, prominence=pr)
+
+    plt.clf()
+    plt.figure(figsize=(30, 5))
+
+    cutoffs = []
+    for i in range(1, len(peaks)):
+        cutoffs.append(peaks[i-1] + 600)
+        cutoffs.append(peaks[i] - 400)
+
+        # plt.axvline(x=peaks[i-1] + 600, color='red')
+        # plt.axvline(x=peaks[i] - 400, color='red')
+
+    plt.plot(sound_sample)
+    plt.plot(peaks, enveloped[peaks], "x")
+    plt.savefig(filename("", "", "ENVELOPED_PEAKS"))
+
+    return cutoffs
 
 def filename(building, room, ID):
     return datafolder + 'B(' + building + ')_R('+room+')_'+ID+'.png'

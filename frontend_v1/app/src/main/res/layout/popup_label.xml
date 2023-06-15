@@ -33,11 +33,25 @@
         android:id="@+id/duration"
         android:layout_width="64dp"
         android:layout_height="42dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="76dp"
         android:hint="0"
         android:inputType="number"
         android:text="1"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.227"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/label_of_building" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/frequency"
+        android:layout_width="128dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="76dp"
+        android:hint="0"
+        android:inputType="number"
+        android:text="10000"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.72"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/label_of_building" />
 
