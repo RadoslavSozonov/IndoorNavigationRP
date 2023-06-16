@@ -1,50 +1,90 @@
+from genericpath import isfile
 import json
 import os
 import wave
-import random
 import numpy as np
+from PIL import Image
+
+from SpectrogramCreator import SpectrogramCreator
 
 class Database:
     def __init__(self):
-        self.jsonfile = 'database\database_layout.json'
-        with open(self.jsonfile, 'r') as f:
-            self.json = json.load(f)
-            f.close()
+        self.sim = SpectrogramCreator()
+        self.dbdir = "database\\standard\\"
 
-    def save_image(self, building, room, audio_data):
-        if building not in self.json['Buildings']:
-            self.json['Buildings'][building] = {}
+    def put(self, room, location, audio_data):
 
-        filename = "database\\" + str(random.randint(0,99999999)) + ".npy"
+        #  make sure the directories exist
+        directory = self.dbdir + room
 
-        float_array = np.array(audio_data, dtype=np.float32)
-        np.save(filename, float_array)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-        if room not in self.json['Buildings'][building]:
-            self.json['Buildings'][building][room] = {}
-            self.json['Buildings'][building][room]['data'] = []
-            self.json['Buildings'][building][room]['ID'] = self.json['Config']['curIndex']
-            self.json['Config']['curIndex'] += 1
+        directory += "\\" + location
 
-        self.json['Buildings'][building][room]['data'].append(filename)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-        with open(self.jsonfile, 'w') as f:
-            json.dump(self.json, f, indent=4)
-            f.close()
+        directory += "\\"
+        # save the image in the directory
 
+        ID = len(os.listdir(directory))
+
+        self.sim.generate_black_white_spectogram(audio_data, directory + str(ID))
+
+        return
+
+    def get(self, room, location):
+        directory = self.dbdir + room + "\\" + location
+        if not os.path.exists(directory):
+            return [], [], False
+        
+        sound_data = []
+        labels = []
+
+        for file in os.listdir(directory):
+            if os.path.isfile(directory + "\\" + file):
+                data = Image.open(directory + "\\" + file)
+                data = np.asarray(data)
+
+                sound_data.append(data)
+                labels.append(room + ": " + location)
+
+        
+
+        sound_data = np.asarray(sound_data)
+        labels = np.asarray(labels)
+
+        return sound_data, labels,  True
+    
+    def get_all(self):
+
+        data = []
+        labels = []
+        label_amount = 0
+
+        for room in os.listdir(self.dbdir):
+            
+            dir = os.path.join(self.dbdir, room)
+
+            for location in os.listdir(dir):
+                filedir = os.path.join(dir, location)
+                label_amount += 1
+                for file in os.listdir(filedir):
+                    if os.path.isfile(filedir + "\\" + file):
+                        img = Image.open(filedir + "\\" + file)
+                        img = np.asarray(img)
+
+                        data.append(img)
+                        labels.append(room + ": " + location)
+
+
+        data = np.asarray(data)
+        labels = np.asarray(labels)
+
+        return data, labels, label_amount
+    
     def clear(self):
-        with open(self.jsonfile, 'w') as f:
-            self.json = {"Config" : {"curIndex" : 0}, "Buildings" : {}}
-            json.dump(self.json, f, indent=4)
-            f.close()
-        for file in os.listdir('database\\'):
-            if file.endswith('.png') or file.endswith('.npy'):
-                os.remove('database\\' + file)
-
-    def get_json(self):
-        # with open(self.jsonfile, 'w') as f:
-        #     self.json = json.load(f)
-        #     f.close()
-        return self.json
+        return
 
     
