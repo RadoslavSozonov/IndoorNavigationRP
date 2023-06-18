@@ -2,7 +2,7 @@ from DeepModels.RNNSingelton import RNNSingelton
 from os import listdir
 import tensorflow as tf
 import time
-
+import pickle
 
 class RNNModel(RNNSingelton):
     rnn_models = {}
@@ -94,7 +94,7 @@ class RNNModel(RNNSingelton):
 
     def load_models(self, path):
         for model_name in listdir(path):
-            model = self.models.load_model(path+model_name)
+            model = pickle.load(open(path + model_name, 'rb'))
             # print("rnn_" + model_name.split(".")[0])
             self.rnn_models["rnn_"+model_name.split(".")[0].replace("-", "_")] = model
         # print(self.rnn_models)
