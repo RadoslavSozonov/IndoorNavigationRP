@@ -122,11 +122,8 @@ def play_ground():
 def load_data_db():  # put application's code here
     spectgramCreator = SpectogramCreator()
 
-    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
-    np_arr = np.asarray(wav_array, dtype=np.int16)
-    chirp_sample_offset = compute_offset(np_arr)
     for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI9_06"):
+        if not place.__contains__("EWI16_6"):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
         np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
@@ -137,17 +134,17 @@ def load_data_db():  # put application's code here
         for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
             start_rate = int((i+1) * interval_rate + chirp_sample_offset)
             sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-            spectrum = spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI9_06", i)
+            spectrum = spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI16_6", i)
             save_spectrogram_to_txt(spectrum, place.split(".")[0])
 
     return 'Loaded!'
 
-@app.route('/eveluate')
+@app.route('/evaluate')
 def evaluate():
     model_name = request.args.get("model")
     data_set = request.args.get("dataset")
     models = {}
-    buildings_name = ["EWI7_06", "EWI8_06", "EWI9_06"]
+    buildings_name = ["EWI15_6", "EWI16_6"]
     if model_name == "all":
         models.update(CNNModel().cnn_models)
         models.update(RNNModel().rnn_models)
@@ -178,7 +175,7 @@ def evaluate():
                     f.write(f"{model_name}: {accuracy}, {loss}\n")
                 f.write(f"\n")
             f.close()
-            print("\n\n\n\n")
+            print("\n")
     return "Done"
 
 @app.route('/predict_location')
@@ -299,8 +296,8 @@ def initialize_models():
     CNNModel().load_models("models/cnn_models/")
     RNNModel().load_models("models/rnn_models/")
     # DBNModel().load_models("models/dbn_models/")
-    KNNModel().load_models("models/knn_models/")
-    LinearClassificationModel().load_models("models/sgd_models/")
+    # KNNModel().load_models("models/knn_models/")
+    # LinearClassificationModel().load_models("models/sgd_models/")
     return "done"
 
 @app.route('/compress_models')

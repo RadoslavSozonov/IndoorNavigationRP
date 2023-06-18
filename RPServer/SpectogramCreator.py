@@ -83,7 +83,7 @@ class SpectogramCreator:
         max_freq = 20400
         if d1_array.size != 4410:
             return
-        freqs, t, sxx = spectrogram(np.array(d1_array[133:]), window=windows.hann(M=256), noverlap=128, fs=44100)
+        freqs, t, sxx = spectrogram(np.array(self.audioDataBroader(d1_array[133:])), window=windows.hann(M=256), noverlap=128, fs=44100)
         freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
         spectrum = sxx[freq_indices, :]
         # print(spectrum.shape)
@@ -91,13 +91,16 @@ class SpectogramCreator:
         spectrum = (spectrum / max_number) * 255
         Firebase().upload_to_real_time_database(label_building, label_room, spectrum)
         return spectrum
-        # if 4 <= i <= 10:
-        #     date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
-        #     cv2.imwrite("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png", spectrum)
-        #     # print(spectrum[2])
-        #     image = Image.open("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png")
-        #     new_image = image.resize((320, 50))
-        #     new_image.save("scipy_images/" + date + "_" + label_building + "_" + label_room + str(i) + ".png")
+
+    def audioDataBroader(self, audioData):
+        return audioData
+        newData = []
+        for number in audioData:
+            for y in range(3):
+                newData.append(number)
+                if len(newData) == 4270:
+                    return newData
+
 
 
 

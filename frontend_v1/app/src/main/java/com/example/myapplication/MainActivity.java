@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private String rooms = "";
 
     private boolean useStaticIp = true;
-    private String server_ip = "145.94.195.165";
+    private String server_ip = "145.94.227.201";
 
     private Activity activity = this;
     @Override
@@ -90,48 +90,48 @@ public class MainActivity extends AppCompatActivity {
         button_recognize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: get the label of the room
-//                "android.resource://"+ "com.example.phone"+ "/" + "raw/dennis"
-                String filePath = "android.resource://"+ "com.example.myapplication"+ "/" + "in.txt";
-//                Field[] fields=R.raw.class.getFields();
-//                R.raw.class.getResourceAsStream();
-//                for(int count=0; count < fields.length; count++){
-//                    Log.i("Raw Asset: ", fields[count].getName());
+//                // TODO: get the label of the room
+////                "android.resource://"+ "com.example.phone"+ "/" + "raw/dennis"
+//                String filePath = "android.resource://"+ "com.example.myapplication"+ "/" + "in.txt";
+////                Field[] fields=R.raw.class.getFields();
+////                R.raw.class.getResourceAsStream();
+////                for(int count=0; count < fields.length; count++){
+////                    Log.i("Raw Asset: ", fields[count].getName());
+////                }
+//                short[] audioData = loadAudioData(filePath);
+//                System.out.println("Data collected");
+//                ServerCommunicationCronetEngine.getNameOfModel(activity, "145.94.195.165");
+//                while (ModelName.modelNames.size() == 0){
+//                    continue;
 //                }
-                short[] audioData = loadAudioData(filePath);
-                System.out.println("Data collected");
-                ServerCommunicationCronetEngine.getNameOfModel(activity, "145.94.195.165");
-                while (ModelName.modelNames.size() == 0){
-                    continue;
-                }
-                int sampleRate = 4410;
-                int chirps = audioData.length/sampleRate;
-                System.out.println(chirps);
-//                System.out.println(na);
-                for(String modelName: ModelName.modelNames){
-                    if(!modelName.contains("rnn")){
-                        continue;
-                    }
-                    ResponseTimes.backendResponseTime = new ArrayList<>();
-                    ResponseTimes.requestResponseTime = new ArrayList<>();
-                    int timeOnBackend = 0;
-                    int timeReqRes = 0;
-                    for(int i = 2; i <= chirps - 60; i++){
-                        short[] chirp = new short[8820];
-                        for(int y = 0, z = i*sampleRate; y<8820; y++){
-                            chirp[y] = audioData[z+y];
-                        }
-                        while (ResponseTimes.stay){
-                            continue;
-                        }
-                        ResponseTimes.stay=true;
-                        List<Integer> times = ServerCommunicationCronetEngine.testPlace(chirp, modelName.substring(1, modelName.length()-1), activity,"145.94.195.165");
-                    }
-                    Log.i("Model Name", modelName.substring(1, modelName.length()-1));
-                    Log.i("Backend Time", String.valueOf(ResponseTimes.backendResponseTime.stream().mapToDouble(a->a).average().getAsDouble()));
-                    Log.i("Response Time", String.valueOf(ResponseTimes.requestResponseTime.stream().mapToDouble(a->a).average().getAsDouble()/1000));
-
-                }
+//                int sampleRate = 4410;
+//                int chirps = audioData.length/sampleRate;
+//                System.out.println(chirps);
+////                System.out.println(na);
+//                for(String modelName: ModelName.modelNames){
+//                    if(!modelName.contains("rnn")){
+//                        continue;
+//                    }
+//                    ResponseTimes.backendResponseTime = new ArrayList<>();
+//                    ResponseTimes.requestResponseTime = new ArrayList<>();
+//                    int timeOnBackend = 0;
+//                    int timeReqRes = 0;
+//                    for(int i = 2; i <= chirps - 60; i++){
+//                        short[] chirp = new short[8820];
+//                        for(int y = 0, z = i*sampleRate; y<8820; y++){
+//                            chirp[y] = audioData[z+y];
+//                        }
+//                        while (ResponseTimes.stay){
+//                            continue;
+//                        }
+//                        ResponseTimes.stay=true;
+//                        List<Integer> times = ServerCommunicationCronetEngine.testPlace(chirp, modelName.substring(1, modelName.length()-1), activity,"145.94.195.165");
+//                    }
+//                    Log.i("Model Name", modelName.substring(1, modelName.length()-1));
+//                    Log.i("Backend Time", String.valueOf(ResponseTimes.backendResponseTime.stream().mapToDouble(a->a).average().getAsDouble()));
+//                    Log.i("Response Time", String.valueOf(ResponseTimes.requestResponseTime.stream().mapToDouble(a->a).average().getAsDouble()/1000));
+//
+//                }
 
 //                String room_label = "room 1";
 //

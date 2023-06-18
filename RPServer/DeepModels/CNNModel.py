@@ -2,13 +2,11 @@ from DeepModels.CNNSingelton import CNNSingelton
 from os import listdir
 import tensorflow as tf
 import time
-
+from keras_flops import get_flops
 
 class CNNModel(CNNSingelton):
     cnn_models = {}
     def __init__(self):
-        print("Fuckk")
-
         self.datasets = tf.keras.datasets
         self.layers = tf.keras.layers
         self.models = tf.keras.models
@@ -26,6 +24,7 @@ class CNNModel(CNNSingelton):
         if metrics is None:
             metrics = [tf.keras.metrics.SparseCategoricalAccuracy()]
         model = self.models.Sequential()
+
         print(model)
         for conv_pool_layer in conv_pool_layers_info:
             conv_filters = conv_pool_layer["conv_filters"]
@@ -80,6 +79,7 @@ class CNNModel(CNNSingelton):
 
         self.cnn_models[name_of_model] = model
         print(model.summary())
+        print(get_flops(model, batch_size=1), 32)
         return model.count_params()
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs=20, batch_size=32):

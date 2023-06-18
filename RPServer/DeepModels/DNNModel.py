@@ -2,7 +2,7 @@ from DeepModels.DNNSingelton import DNNSingelton
 from os import listdir
 import tensorflow as tf
 import time
-
+from keras_flops import get_flops
 
 class DNNModel(DNNSingelton):
     dnn_models = {}
@@ -40,6 +40,7 @@ class DNNModel(DNNSingelton):
         # model.save("models/dnn_models/" + name_of_model + ".h5")
         self.dnn_models[name_of_model] = model
         print(model.summary())
+        print(get_flops(model, batch_size=1), 32)
         return model.count_params()
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=32):

@@ -4,6 +4,7 @@ from DeepModels.RNNSingelton import RNNSingelton
 from os import listdir
 import tensorflow as tf
 import time
+from keras_flops import get_flops
 
 
 class RNNModel(RNNSingelton):
@@ -67,6 +68,7 @@ class RNNModel(RNNSingelton):
         # model.save("models/rnn_models/" + name_of_model + ".h5")
         self.rnn_models[name_of_model] = model
         print(model.summary())
+        print(get_flops(model, batch_size=64))
         return model.count_params()
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=64):
@@ -97,7 +99,8 @@ class RNNModel(RNNSingelton):
 
     def load_models(self, path):
         for model_name in listdir(path):
-            model = self.models.load_model(path+model_name)
+            # model = self.models.load_model(path+model_name)
+            model = pickle.load(open(path + model_name, 'rb'))
             # print("rnn_" + model_name.split(".")[0])
             self.rnn_models["rnn_"+model_name.split(".")[0].replace("-", "_")] = model
         # print(self.rnn_models)

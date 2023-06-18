@@ -36,7 +36,6 @@ class Firebase():
             "label_room": label_room,
             "data": dictionary
         })
-        # database.collection(label_building).document(label_room).set({str(uuid.uuid4()): dictionary}, merge=True)
 
     def getData(self, label_building):
         if self.labels == 0:
