@@ -12,16 +12,39 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
+import com.google.mlkit.common.model.LocalModel;
+import com.google.mlkit.vision.label.ImageLabeler;
+import com.google.mlkit.vision.label.ImageLabeling;
+import com.google.mlkit.vision.label.custom.CustomImageLabelerOptions;
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
+//https://codelabs.developers.google.com/tflite-computer-vision-update-app?continue=https%3A%2F%2Fdevelopers.google.com%2Flearn%2Fpathways%2Fgoing-further-image-classification%23codelab-https%3A%2F%2Fcodelabs.developers.google.com%2Ftflite-computer-vision-update-app#4
+//https://stackoverflow.com/questions/69352192/poor-tensorflow-lite-accuracy-in-android-application
+//https://www.tensorflow.org/lite/guide/signatures#run_signatures
+//https://www.tensorflow.org/tutorials/images/classification
+
 public class Model implements ModelInterface {
 
     protected Interpreter tflite;
+    protected LocalModel localModel;
 
     public Model(Activity activity, String modelName){
-        try {
-            this.tflite = new Interpreter(this.loadModelFile(activity, modelName));
-        }catch (Exception ex){
-            ex.printStackTrace();
-        }
+        this.localModel = new LocalModel.Builder()
+                .setAssetFilePath(modelName)
+                .build();
+
+        CustomImageLabelerOptions options = new CustomImageLabelerOptions.Builder(localModel)
+                .setConfidenceThreshold(0.7f)
+                .setMaxResultCount(5)
+                .build();
+
+        ImageLabeler labeler = ImageLabeling.getClient(options);
+
+//        try {
+//            MappedByteBuffer mappedByteBuffer = this.loadModelFile(activity, modelName);
+//            this.tflite = new Interpreter(mappedByteBuffer);
+//        }catch (Exception ex){
+//            ex.printStackTrace();
+//        }
     }
     protected MappedByteBuffer loadModelFile(Activity activity, String model_name) {
         try {

@@ -1,7 +1,12 @@
 from DeepModels.CNNSingelton import CNNSingelton
 from os import listdir
 import tensorflow as tf
+import numpy as np
 import time
+import tensorflow_model_optimization as tfmot
+import torch.nn as nn
+import torchvision
+import torchvision.transforms as transforms
 
 
 class CNNModel(CNNSingelton):
@@ -23,6 +28,7 @@ class CNNModel(CNNSingelton):
             metrics=None,
             labels_num=2
     ):
+        nn.Conv2d()
         if metrics is None:
             metrics = [tf.keras.metrics.SparseCategoricalAccuracy()]
         model = self.models.Sequential()
@@ -94,6 +100,7 @@ class CNNModel(CNNSingelton):
             validation_data=(validation_set, validation_labels),
             shuffle=False
         )
+        # self.cnn_models[name_of_model].export(export_dir='compressed_models/')
         self.cnn_models[name_of_model].save("models/cnn_models/" + name_of_model + ".h5")
         print(history)
         return history, self.cnn_models[name_of_model], int(time.time()-start_time)
@@ -121,8 +128,55 @@ class CNNModel(CNNSingelton):
             model = self.models.load_model(path+model_name)
             #Create a TFLite Converter Object from model we created
             converter = tf.lite.TFLiteConverter.from_keras_model(model=model)
+            converter.target_spec.supported_ops = [
+                tf.lite.OpsSet.TFLITE_BUILTINS,  # enable TensorFlow Lite ops.
+                tf.lite.OpsSet.SELECT_TF_OPS  # enable TensorFlow ops.
+            ]
+            converter.experimental_enable_resource_variables = True
             #Create a tflite model object from TFLite Converter
             tfmodel = converter.convert()
             # Save TFLite model into a .tflite file
             model_new_name = "cnn_"+model_name.split(".")[0].replace("-", "_")
             open("compressed_models/"+model_new_name+".tflite", "wb").write(tfmodel)
+
+    def quantization(self, model_name, trainX, trainY, testX, testY):
+        quantize_model = tfmot.quantization.keras.quantize_model
+
+        # q_aware stands for for quantization aware.
+        q_aware_model = quantize_model(self.cnn_models[model_name])
+        q_aware_model.compile(optimizer='adam',
+                              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                              metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+
+        q_aware_model.fit(trainX, trainY,
+                          batch_size=32, epochs=100, validation_data=(testX, testY))
+
+        converter = tf.lite.TFLiteConverter.from_keras_model(q_aware_model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        quantized_tflite_model = converter.convert()
+
+        interpreter = tf.lite.Interpreter(model_content=quantized_tflite_model)
+        interpreter.allocate_tensors()
+
+        input_index = interpreter.get_input_details()[0]["index"]
+        output_index = interpreter.get_output_details()[0]["index"]  # Run predictions on every image in the "test" dataset.
+        prediction_digits = []
+        for i, test_image in enumerate(testX):
+            # if i % 1000 == 0:
+            #     print('Evaluated on {n} results so far.'.format(n=i))
+            # Pre-processing: add batch dimension and convert to float32 to match with
+            # the model's input data format.
+
+            test_image = np.expand_dims(test_image.reshape((5, 32, 1)), axis=0).astype(np.float32)
+            interpreter.set_tensor(input_index, test_image)  # Run inference.
+            interpreter.invoke()  # Post-processing: remove batch dimension and find the digit with highest
+            # probability.
+            output = interpreter.tensor(output_index)
+            digit = np.argmax(output()[0])
+            prediction_digits.append(digit)
+
+        # Compare prediction results with ground truth labels to calculate accuracy.
+        prediction_digits = np.array(prediction_digits)
+        accuracy = (prediction_digits == testY).mean()
+        print(accuracy)
+        open("compressed_models/" + model_name + ".tflite", "wb").write(quantized_tflite_model)

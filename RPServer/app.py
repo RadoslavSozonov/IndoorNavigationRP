@@ -16,6 +16,8 @@ from DeepModels.RNNModel import RNNModel
 from ModelCreator import ModelCreator
 from SpectogramCreator import SpectogramCreator
 import os
+from firebaseConfig import Firebase
+from sklearn.model_selection import train_test_split
 from datetime import datetime
 
 app = Flask(__name__)
@@ -271,10 +273,29 @@ def compress_models():
     DNNModel().compress("models/dnn_models/")
     CNNModel().compress("models/cnn_models/")
     RNNModel().compress("models/rnn_models/")
-    # DBNModel().load_models("models/dbn_models/")
-    # KNNModel().load_models("models/knn_models/")
-    # LinearClassificationModel().load_models("models/sgd_models/")
     return "done"
+
+@app.route('/quantization')
+def quantization():
+    building = request.args.get("building_name")
+    model_name = request.args.get("models_name")
+    data, labelsN = Firebase().getData(building)
+    labels = [unit[0] for unit in data]
+    map_label_encoding = {}
+    value = 0
+    for label in labels:
+        if label not in map_label_encoding:
+            map_label_encoding[label] = value
+            value += 1
+    spectrograms = [unit[1] for unit in data]
+    encoded_labels = [map_label_encoding[label] for label in labels]
+    shuffled_list = ModelCreator().shuffle(spectrograms, encoded_labels)
+    train_x = np.array([x[0] for x in shuffled_list])
+    train_y = np.array([x[1] for x in shuffled_list])
+    X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, train_size=0.8, shuffle=True,
+                                                        random_state=1)
+    CNNModel().quantization(model_name, X_train, y_train, X_test, y_test)
+    return "Done"
 
 if __name__ == '__main__':
     app.run(host="192.168.56.1", port=5000, debug=True)

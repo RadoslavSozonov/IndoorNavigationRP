@@ -58,4 +58,6 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite-gpu:+'
     implementation 'org.tensorflow:tensorflow-lite-support:+'
     implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:+'
+    implementation 'com.google.mlkit:image-labeling:17.0.7'
+    implementation 'com.google.mlkit:image-labeling-custom:17.0.1'
 }

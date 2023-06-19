@@ -105,24 +105,7 @@ public class MainActivity extends AppCompatActivity {
                 DataSet dataSet = loadAudioData();
                 System.out.println("Data collected");
                 String[] modelNames = new String[]{
-                        "cnn_conv_16_32_dense_1024_2023_06_09_16_27_EWI7_06.tflite",
-                        "cnn_conv_32_32_dense_1024_2023_06_09_16_30_EWI7_06.tflite",
-                        "cnn_conv_32_64_128_dense_512_2023_06_09_16_40_EWI7_06.tflite",
-                        "cnn_conv_128_64_64_dense_1024_2023_06_09_16_33_EWI7_06.tflite",
-                        "cnn_conv_256_128_dense_1024_2023_06_09_16_45_EWI7_06.tflite",
-                        "cnn_conv_512_128_dense_512_2023_06_09_17_08_EWI7_06.tflite",
-                        "dnn_dense_256_512_256_2023_06_09_17_43_EWI7_06.tflite",
-                        "dnn_dense_256_512_1024_2023_06_09_17_49_EWI7_06.tflite",
-                        "dnn_dense_512_128_2048_512_2023_06_09_17_56_EWI7_06.tflite",
-                        "dnn_dense_512_256_256_64_2023_06_09_17_41_EWI7_06.tflite",
-                        "dnn_dense_1024_512_2023_06_09_17_45_EWI7_06.tflite",
-                        "dnn_dense_4096_16_2023_06_09_17_52_EWI7_06.tflite",
-                        "rnn_lstm_32_64_dense_1024_2023_06_11_09_42_EWI7_06.tflite",
-                        "rnn_lstm_64_64_dense_256_2023_06_11_09_35_EWI7_06.tflite",
-                        "rnn_lstm_64_128_dense_1024_2023_06_11_09_45_EWI7_06.tflite",
-                        "rnn_lstm_64_dense_1024_2023_06_11_09_40_EWI7_06.tflite",
-                        "rnn_lstm_128_dense_128_2023_06_11_09_38_EWI7_06.tflite",
-                        "rnn_lstm_256_128_dense_256_2023_06_11_09_49_EWI7_06.tflite"
+                        "cnn_conv_16_32_dense_1024_2023_06_19_20_03_EWI15_6.tflite"
                 };
                 BatteryManager mBatteryManager =
                         (BatteryManager)activity.getSystemService(Context.BATTERY_SERVICE);
@@ -175,13 +158,13 @@ public class MainActivity extends AppCompatActivity {
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
 
-                DataSet dataList = new DataSet("ewi9_06");
+                DataSet dataList = new DataSet("ewi15_6");
                 for(int i = 0; i<fields.length;i++){
 
                     String[] split = fields[i].getName().split("_");
                     String buildingName = split[0]+"_"+split[1];
 
-                    if(!buildingName.contains("ewi9_06")){
+                    if(!buildingName.contains("ewi15_6")){
                         continue;
                     }
 
