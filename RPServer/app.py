@@ -114,35 +114,20 @@ def play_ground():
 @app.route('/load_data_db')
 def load_data_db():  # put application's code here
     spectgramCreator = SpectogramCreator()
+    data_building = request.args.get("building_name")
 
-    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
-    np_arr = np.asarray(wav_array, dtype=np.int16)
-    chirp_sample_offset = compute_offset(np_arr)
     for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI7"):
+        if not place.__contains__(data_building):
             continue
         samplerate, wav_array = wavfile.read('wav_files/'+place)
         np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
         chirp_sample_offset = compute_offset(np_arr)
-        # print(chirp_sample_offset)
-        # chirp_sample_offset = 0
-        # print(chirp_sample_offset)
         letter = place.split("_")[-1].split(".")[0]
         print(letter)
         for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
-            # if i == 5:
-            #     start_rate = int((i + 1) * interval_rate + chirp_sample_offset)
-            #     sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-            #     plt.plot(sliced)
-            #     plt.ylabel("Amplitude")
-            #     plt.xlabel("Time")
-            #     # plt.show()
-            #     plt.savefig("waveplots/"+letter+"_"+str(i)+"_3.png")
-            #     plt.clf()
-
             start_rate = int((i+1) * interval_rate + chirp_sample_offset)
             sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-            spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI7_06", i)
+            spectgramCreator.createSpectrogramScipy(letter, sliced, data_building, i)
 
     return 'Loaded!'
 
@@ -296,6 +281,11 @@ def quantization():
                                                         random_state=1)
     CNNModel().quantization(model_name, X_train, y_train, X_test, y_test)
     return "Done"
+
+@app.route('/get_models_weights')
+def get_models_weights():
+    model_name = request.args.get("model_name")
+    CNNModel().get_weights(model_name)
 
 if __name__ == '__main__':
     app.run(host="192.168.56.1", port=5000, debug=True)

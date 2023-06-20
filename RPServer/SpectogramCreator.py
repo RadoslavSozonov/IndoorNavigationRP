@@ -36,14 +36,7 @@ class SpectogramCreator:
     def createSpectogram(self, label_room, d1_array, label_building, i):
             spectrum = self.spectrogam_generator(d1_array, i, label_building, label_room)
             max_number = np.max(spectrum)
-            #print(multiplier)
-            # print(spectrum[2])
-            # spectrum = (spectrum/max_number)*255
-            # firebase.upload_to_real_time_database(label_building, label_room, spectrum)
-            #print(spectrum)
-            # print(spectrum)
-            # f, t, sxx = spectrogram(np.array(array), window=windows.hann(M=256), noverlap=128, fs=20000)
-            # print(i, spectrum.shape)
+
             if i < 20:
                 date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")
                 cv2.imwrite("photos2/"+date+"_"+label_building+"_"+label_room+str(i)+".png", spectrum)
@@ -73,7 +66,7 @@ class SpectogramCreator:
         spectrum = sxx[freq_indices, :]
         # print(spectrum.shape)
         max_number = np.max(spectrum)
-        spectrum = (spectrum / max_number) * 255
+        spectrum = (spectrum / max_number)
 
         return spectrum
 
@@ -88,7 +81,7 @@ class SpectogramCreator:
         spectrum = sxx[freq_indices, :]
         # print(spectrum.shape)
         max_number = np.max(spectrum)
-        spectrum = (spectrum / max_number) * 255
+        spectrum = (spectrum / max_number)
         Firebase().upload_to_real_time_database(label_building, label_room, spectrum)
         if 4 <= i <= 10:
             date = datetime.now().strftime('%Y-%m-%d %H:%M:%S').replace(" ", "_").replace(":", "_")

@@ -10,6 +10,8 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 import java.io.FileInputStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.google.mlkit.common.model.LocalModel;
@@ -28,23 +30,23 @@ public class Model implements ModelInterface {
     protected LocalModel localModel;
 
     public Model(Activity activity, String modelName){
-        this.localModel = new LocalModel.Builder()
-                .setAssetFilePath(modelName)
-                .build();
+//        this.localModel = new LocalModel.Builder()
+//                .setAssetFilePath(modelName)
+//                .build();
+//
+//        CustomImageLabelerOptions options = new CustomImageLabelerOptions.Builder(localModel)
+//                .setConfidenceThreshold(0.7f)
+//                .setMaxResultCount(5)
+//                .build();
+//
+//        ImageLabeler labeler = ImageLabeling.getClient(options);
 
-        CustomImageLabelerOptions options = new CustomImageLabelerOptions.Builder(localModel)
-                .setConfidenceThreshold(0.7f)
-                .setMaxResultCount(5)
-                .build();
-
-        ImageLabeler labeler = ImageLabeling.getClient(options);
-
-//        try {
-//            MappedByteBuffer mappedByteBuffer = this.loadModelFile(activity, modelName);
-//            this.tflite = new Interpreter(mappedByteBuffer);
-//        }catch (Exception ex){
-//            ex.printStackTrace();
-//        }
+        try {
+            MappedByteBuffer mappedByteBuffer = this.loadModelFile(activity, modelName);
+            this.tflite = new Interpreter(mappedByteBuffer);
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
     }
     protected MappedByteBuffer loadModelFile(Activity activity, String model_name) {
         try {
@@ -62,12 +64,12 @@ public class Model implements ModelInterface {
     }
 
     @Override
-    public void train(List<float[][][][]> trainX, List<Integer> trainY, List<float[][][][]> testX, List<Integer> testY) {
+    public void train(List<float[]> trainX, List<Integer> trainY, List<float[]> testX, List<Integer> testY) {
 
     }
 
     @Override
-    public int predict(float[][][][] dataChunk) {
+    public int predict(float[] dataChunk) {
         //        float[][] results = new float[1][5];
         int[] inputShape = this.tflite.getInputTensor(0).shape();
 //        System.out.println(super.tflite.getInputTensor(0).dataType());
@@ -82,21 +84,22 @@ public class Model implements ModelInterface {
                 outputShape,
                 this.tflite.getOutputTensor(0).dataType()
         );
-        float[] flatDataChunk = new float[32*5];
-        for(int i = 0; i < dataChunk.length; i++){
-            for(int y = 0; y < dataChunk[0].length; y++){
-                flatDataChunk[i* dataChunk.length+y] = dataChunk[0][i][y][0];
-            }
-        }
+//        float[] flatDataChunk = new float[32*5];
+//        for(int i = 0; i < dataChunk.length; i++){
+//            for(int y = 0; y < dataChunk[0].length; y++){
+//                flatDataChunk[i* dataChunk.length+y] = dataChunk[0][i][y][0];
+//            }
+//        }
 
-        input.loadArray(flatDataChunk, inputShape);
+        input.loadArray(dataChunk, inputShape);
 //        output.loadArray(results, outputShape);
 
         this.tflite.run(input.getBuffer(), output.getBuffer());
         float[] results = output.getFloatArray();
         int maxIndex = 0;
         float value = 0;
-        for(int i = 0; i<5;i++){
+        System.out.println(Arrays.toString(results));
+        for(int i = 0; i<4;i++){
             if(results[i] > value){
                 maxIndex=i;
             }
@@ -105,15 +108,43 @@ public class Model implements ModelInterface {
     }
 
     @Override
-    public float evaluate(List<float[][][][]> testX, List<Integer> testY) {
+    public float evaluate(List<float[]> testX, List<Integer> testY) {
         int truePredicted = 0;
         int predictions = 0;
-        for(float[][][][] data: testX){
+//        System.out.println(Arrays.toString(testY.toArray()));
+        for(float[] data: testX){
             if(this.predict(data) == testY.get(predictions)){
                 truePredicted+=1;
             }
             predictions+=1;
         }
         return (float) truePredicted/predictions;
+    }
+
+    public float[] activation(float[] input) {
+        float[] exp = new float[input.length];
+        float sum = 0;
+        for(int neuron = 0; neuron < exp.length; neuron++) {
+            exp[neuron] = (float) Math.exp(input[neuron]);
+            sum += exp[neuron];
+        }
+
+        float[] output = new float[input.length];
+        for(int neuron = 0; neuron < output.length; neuron++) {
+            output[neuron] = exp[neuron] / sum;
+        }
+
+        return output;
+    }
+
+    public float[] derivative(float[] input) {
+        float[] softmax = activation(input);
+
+        float[] output = new float[input.length];
+        for(int neuron = 0; neuron < output.length; neuron++) {
+            output[neuron] = (float) (softmax[neuron] * (1d - softmax[neuron]));
+        }
+
+        return output;
     }
 }

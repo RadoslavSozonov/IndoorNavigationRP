@@ -1,7 +1,7 @@
 package com.example.myapplication.models;
 
 public class DataChunk {
-    float[][][][] spetrogram;
+    float[] spetrogram;
 
     private String building;
 
@@ -10,7 +10,7 @@ public class DataChunk {
     public DataChunk(String building, String label) {
         this.building = building;
         this.label = label;
-        this.spetrogram = new float[1][5][32][1];
+        this.spetrogram = new float[5*32];
     }
 
 //    public void createSpectrogram(short[] data){
@@ -19,11 +19,11 @@ public class DataChunk {
 //
 //    }
 
-    public float[][][][] getSpetrogram(){
+    public float[] getSpetrogram(){
         return this.spetrogram;
     }
 
-    public void setSpetrogram(float[][][][] spetrogram) {
+    public void setSpetrogram(float[] spetrogram) {
         this.spetrogram = spetrogram;
     }
 

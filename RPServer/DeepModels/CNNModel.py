@@ -4,10 +4,6 @@ import tensorflow as tf
 import numpy as np
 import time
 import tensorflow_model_optimization as tfmot
-import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
-
 
 class CNNModel(CNNSingelton):
     cnn_models = {}
@@ -28,7 +24,7 @@ class CNNModel(CNNSingelton):
             metrics=None,
             labels_num=2
     ):
-        nn.Conv2d()
+
         if metrics is None:
             metrics = [tf.keras.metrics.SparseCategoricalAccuracy()]
         model = self.models.Sequential()
@@ -180,3 +176,7 @@ class CNNModel(CNNSingelton):
         accuracy = (prediction_digits == testY).mean()
         print(accuracy)
         open("compressed_models/" + model_name + ".tflite", "wb").write(quantized_tflite_model)
+
+    def get_weights(self, model_name):
+        print(self.cnn_models)
+        print(self.cnn_models[model_name].get_weights())

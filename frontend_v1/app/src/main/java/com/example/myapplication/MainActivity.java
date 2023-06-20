@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
                 DataSet dataSet = loadAudioData();
                 System.out.println("Data collected");
                 String[] modelNames = new String[]{
-                        "cnn_conv_16_32_dense_1024_2023_06_19_20_03_EWI15_6.tflite"
+                        "cnn_conv_16_32_dense_1024_2023_06_20_11_01_EWI20_06.tflite"
                 };
                 BatteryManager mBatteryManager =
                         (BatteryManager)activity.getSystemService(Context.BATTERY_SERVICE);
@@ -158,18 +158,18 @@ public class MainActivity extends AppCompatActivity {
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
 
-                DataSet dataList = new DataSet("ewi15_6");
+                DataSet dataList = new DataSet("ewi20_06");
                 for(int i = 0; i<fields.length;i++){
 
                     String[] split = fields[i].getName().split("_");
                     String buildingName = split[0]+"_"+split[1];
 
-                    if(!buildingName.contains("ewi15_6")){
+                    if(!buildingName.contains("ewi20_06")){
                         continue;
                     }
 
                     String label = fields[i].getName().split("_")[2].split("\\.")[0];
-                    System.out.println();
+                    System.out.println(label);
                     int rID = 0;
                     try {
                         rID = fields[i].getInt(fields[i]);
@@ -205,24 +205,22 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         }
                         String[] rows = specrogram.split("A");
-                        int n = 0;
-                        float[][][][] spectr = new float[1][5][32][1];
+                        StringBuilder wholeData = new StringBuilder();
                         for(String row: rows){
-                            int m = 0;
-                            String[] numbers = row.split("\r\n");
-                            if(numbers.length == 0 || numbers.length == 1){
-                                break;
-                            }
-                            for(String number: numbers){
-                                if(number.length() == 0) {
-                                    break;
-                                }
-                                float shortNum = Float.parseFloat(number);
-                                spectr[0][n][m][0] = shortNum;
-                                m++;
-                            }
-                            n++;
+                            wholeData.append(row);
                         }
+
+                        float[] spectr = new float[5*32];
+                        String[] numbers = wholeData.toString().replaceAll("\r\n\r\n", "\r\n").split("\r\n");
+                        for(int count = 0, index=0; count < numbers.length; count++){
+//                            System.out.println(numbers[count]);
+                            if(numbers[count].equals("")){
+                                continue;
+                            }
+                            spectr[index] = Float.parseFloat(numbers[count]);
+                            index+=1;
+                        }
+
                         DataChunk dataChunk = new DataChunk(buildingName, label);
                         dataChunk.setSpetrogram(spectr);
                         data.getDataChunkList().add(dataChunk);
