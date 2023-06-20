@@ -14,8 +14,6 @@ database = Database()
 
 counter = 0
 
-
-
 # cnnModel : CNNModel
 
 @APP.route('/', methods=['POST', 'GET'])
@@ -36,7 +34,7 @@ def add_new_location_point():
 
     sound_sample = get_numerical_sound_sample(json.loads(request.data))
 
-    return handle_input(sound_sample, placeLabel, buildingLabel, 0.005)
+    return handle_input(sound_sample, placeLabel, buildingLabel)
 
 @APP.route('/train_model', methods=['POST', 'GET'])
 def train_model():
@@ -48,7 +46,15 @@ def train_model():
 @APP.route('/classify', methods=['POST'])
 def classify():
 
-    sound_sample = get_numerical_sound_sample(request.data)
+    # sound_sample = get_numerical_sound_sample(request.data)
+
+    list_of_records = request.data
+    dictionary = json.loads(list_of_records)
+
+    for key in dictionary:
+        dictionary[key] = [float(i) for i in dictionary[key].strip('][').split(', ')]
+
+    sound_sample = dictionary['recording']
 
     return _classify(sound_sample)
     

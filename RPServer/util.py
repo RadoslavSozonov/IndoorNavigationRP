@@ -1,11 +1,15 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import os
+import time
 
 from scipy.signal import find_peaks
 from AudioFilter import AudioFilter
 from Database import Database
 from Model import Model
+
+import globals
 
 matplotlib.use("Agg")
 
@@ -22,12 +26,14 @@ def get_numerical_sound_sample(request_data):
     sound_sample = request_data['1']
     return sound_sample
 
-def handle_input(sound_sample, room, building, pr):
+def handle_input(sound_sample, room, building):
     sound_sample = np.asarray(sound_sample, dtype=np.float32)
 
-    # sound_sample = audioFilter.apply_high_pass_filter(sound_sample, 18500)
+    
 
-    cutoffs = find_cutoffs(sound_sample, pr)
+    cutoffs = find_cutoffs(sound_sample)
+
+    # sound_sample = audioFilter.apply_high_pass_filter(sound_sample, 18500)
 
     for i in range(1, len(cutoffs), 2):
         sub_sample = sound_sample[cutoffs[i-1]:cutoffs[i]]
@@ -37,10 +43,10 @@ def handle_input(sound_sample, room, building, pr):
     print("OK")
     return "Success"
 
-def find_cutoffs(sound_sample, pr):
+def find_cutoffs(sound_sample):
     sound_sample = audioFilter.apply_high_pass_filter(sound_sample, 19500)
     enveloped = audioFilter.smooth(audioFilter.envelope(sound_sample))
-    peaks, _ = find_peaks(enveloped, prominence=pr)
+    peaks, _ = find_peaks(enveloped, prominence=0.005)
 
     plt.clf()
     plt.figure(figsize=(30, 5))
@@ -66,20 +72,37 @@ def filename(building, room, ID):
 def _train_model():
     print("training model")
 
-    data, labels, label_amount = database.get_all()
+    for type in globals.SPECTROGRAM_TYPES:
+        data, labels, label_amount = database.get_all(type)
 
-    print(np.shape(data))
-    print(np.shape(labels))
-
-    model.train(data, labels, label_amount)
+        model.train(data, labels, label_amount, type)
 
     return
 
 def _classify(sound_sample):
     sound_sample = np.array(sound_sample, dtype=np.float32)
 
-    normalized_sample = (sound_sample - np.mean(sound_sample)) / np.std(sound_sample)
-    prediction = model.predict(np.expand_dims(normalized_sample, axis=0))
-    predicted_label = model.id_to_label[np.argmax(prediction)]
-    print(f'Predicted Label: {predicted_label}')
-    return predicted_label
+    model.load()
+
+    cutoffs = find_cutoffs(sound_sample)
+
+    predictions = []
+
+    for i in range(1, len(cutoffs), 2):
+        sub_sample = sound_sample[cutoffs[i-1]:cutoffs[i]]
+
+        normalized_sample = (sub_sample - np.mean(sub_sample)) / np.std(sub_sample)
+
+        filename = "temp\\" + str(len(os.listdir("temp\\")))
+
+        database.create_spectrogram(normalized_sample, filename)
+
+        time.sleep(0.1)
+
+        data = database.load_image(filename + ".png")
+
+        prediction = model.predict(np.expand_dims(data, axis=0))
+        predictions.append(model.id_to_label[np.argmax(prediction)])
+    
+    print(predictions)
+    return "predicted_label"
