@@ -14,13 +14,21 @@ class DNNModel(DNNSingelton):
 
     def create_new_model(
             self,
-            name_of_model,
-            dense_layers_info,
+            model_name,
+            model_info,
             labels_num,
+            layers_creator,
             input_shape=(5, 32, 1),
             optimizer='adam',
-            metrics=None
+            metrics=None,
+            building=""
     ):
+        dense_layers_info = layers_creator("dense_layers", model_info)
+        # model_name = ""
+        model_name += "dense_"
+        for layer in dense_layers_info:
+            model_name += str(layer["units"]) + "_"
+        model_name += building
         if metrics is None:
             metrics = [tf.keras.metrics.SparseCategoricalAccuracy()]
         model = self.models.Sequential()
@@ -38,10 +46,10 @@ class DNNModel(DNNSingelton):
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                       metrics=metrics)
         # model.save("models/dnn_models/" + name_of_model + ".h5")
-        self.dnn_models[name_of_model] = model
+        self.dnn_models[model_name] = model
         print(model.summary())
-        print(get_flops(model, batch_size=1), 32)
-        return model.count_params()
+        flops = get_flops(model, batch_size=32)
+        return model.count_params(), round(flops / 1000)
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=32):
         start_time = time.time()

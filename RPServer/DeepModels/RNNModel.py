@@ -17,15 +17,28 @@ class RNNModel(RNNSingelton):
 
     def create_new_model(
             self,
-            name_of_model,
-            dense_layers_info,
+            model_name,
+            model_info,
             input_shape,
+            layers_creator,
             optimizer="sgd",
             units=None,
             labels_num=2,
-            metrics=None
-
+            metrics=None,
+            building=""
     ):
+        lstm_layers_info = model_info["lstm_units"]
+        dense_layers_info = layers_creator("dense_layers", model_info)
+        # model_name = ""
+        model_name += "lstm_"
+        for layer in lstm_layers_info:
+            model_name += str(layer) + "_"
+
+        model_name += "dense_"
+        for layer in dense_layers_info:
+            model_name += str(layer["units"]) + "_"
+
+        model_name += building
         if units is None:
             units = [64]
 
@@ -66,10 +79,10 @@ class RNNModel(RNNSingelton):
             metrics=metrics,
         )
         # model.save("models/rnn_models/" + name_of_model + ".h5")
-        self.rnn_models[name_of_model] = model
+        self.rnn_models[model_name] = model
         print(model.summary())
-        print(get_flops(model, batch_size=64))
-        return model.count_params()
+        flops = get_flops(model, batch_size=32)
+        return model.count_params(), round(flops/1000)
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=64):
         start_time = time.time()

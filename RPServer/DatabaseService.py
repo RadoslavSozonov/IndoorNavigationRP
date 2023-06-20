@@ -12,7 +12,7 @@ import numpy as np
 client = MongoClient('localhost', 27017)
 db = client["RPServer"]
 
-class Firebase():
+class DatabaseService():
     __instance = None
 
     def __new__(cls, *args, **kwargs):

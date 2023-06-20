@@ -2,22 +2,13 @@ from os import listdir
 
 from flask import Flask, request
 import json
-import numpy as np
-from scipy.io import wavfile
-from matplotlib import pyplot as plt
-from scipy.signal import spectrogram
-from scipy.signal.windows import hann
 from scipy.io.wavfile import write
+from Converter import Converter
+from DataLoader import DataLoader
 from DeepModels.CNNModel import CNNModel
 from DeepModels.DNNModel import DNNModel
-from DeepModels.KNNModel import KNNModel
-from DeepModels.LinearClassificationModel import LinearClassificationModel
 from DeepModels.RNNModel import RNNModel
 from ModelCreator import ModelCreator
-from SpectogramCreator import SpectogramCreator
-import os
-from firebaseConfig import Firebase
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -31,180 +22,49 @@ chirp_error_amount = 2
 interval_rate = sample_rate * interval
 
 
-def create_spectrogram(array, filename):
-    print(array.shape)
-    f, t, Sxx = spectrogram(array, 44100, window=hann(256, sym=False))
-    plt.pcolormesh(t, f, Sxx, shading='gouraud')
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.savefig(filename)
-
 @app.route('/convert_wav_to_spectrograms')
 def convert_wav_to_spectrograms():
-    for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI"):
-            continue
-        spectrogramCreator = SpectogramCreator()
-        samplerate, wav_array = wavfile.read('wav_files/'+place)
-        np_arr = np.asarray(wav_array, dtype=np.int16)
-        chirp_sample_offset = compute_offset(np_arr)
-        with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
-            for i in range(50):
-                start_rate = int((i+2) * interval_rate + chirp_sample_offset)
-                sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-                spectrogram = spectrogramCreator.createSpectrogramScipyTest(sliced)
-                # print(sliced)
-                for row in spectrogram:
-                    for element in row:
-                        f.write(f"{element}\n")
-                    f.write(f"A\n")
-                f.write(f"B\n")
-
-        # np_arr = np.array(wav_array)
-        # np.savetxt('text_files/'+place.split(".")[0]+".txt", np_arr, delimiter=',')
+    Converter().convert_wav_to_spectrograms()
     return "Done"
 
-def save_spectrogram_to_txt(spectrogram, name):
-    with open('text_files/' + name + ".txt", 'a') as f:
-        # print(sliced)
-        for row in spectrogram:
-            for element in row:
-                f.write(f"{element}\n")
-            f.write(f"A\n")
-        f.write(f"B\n")
 
 @app.route('/convert_wav_to_text_file')
 def convert_wav_to_text_file():
-    for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI"):
-            continue
-        samplerate, wav_array = wavfile.read('wav_files/'+place)
-        with open('text_files/'+place.split(".")[0].lower()+".txt", 'w') as f:
-            for line in wav_array[:100*4410]:
-                f.write(f"{line}\n")
-        # np_arr = np.array(wav_array)
-        # np.savetxt('text_files/'+place.split(".")[0]+".txt", np_arr, delimiter=',')
+    Converter().convert_wav_to_text_file()
     return "Done"
-
-@app.route('/add_room', methods=['POST'])
-def add_room():
-    room_data = request.json
-    room_label = room_data['room_label']
-    building_label = room_data['building_label']
-    room_audio = room_data['audio']
-    chirp_sample_offset = 0
-    counter = 0
-    np_arr = np.asarray(room_audio, dtype=np.int16)
-    for i in range(chirp_amount - chirp_error_amount):
-        start_rate = int(i * interval_rate + chirp_sample_offset)
-        sliced = np_arr[0, start_rate:(int(start_rate + interval_rate))]
-        create_spectrogram(sliced, 'scipy_images/tarck' + str(counter) + '.jpg')
-        counter += 1
-
-    # filename = doc_ref.id + ".wav"
-    # write(filename, 44100, arr)
-
-    return 'OK'
 
 
 @app.route('/')
 def hello_world():
     return 'Hello World!'
 
+
 @app.route("/play_ground")
 def play_ground():
-    samplerate, wav_array = wavfile.read('wav_files/EWI7_06_19A.wav')
-    np_arr = np.asarray(wav_array, dtype=np.int16)
-    chirp_sample_offset = compute_offset(np_arr)
-    return str(chirp_sample_offset)
+    return "Done"
+
 
 @app.route('/load_data_db')
 def load_data_db():  # put application's code here
-    spectgramCreator = SpectogramCreator()
-
-    for place in os.listdir("wav_files/"):
-        if not place.__contains__("EWI16_6"):
-            continue
-        samplerate, wav_array = wavfile.read('wav_files/'+place)
-        np_arr = np.asarray(wav_array[int(4*interval_rate):], dtype=np.int16)
-        chirp_sample_offset = compute_offset(np_arr)
-
-        letter = place.split("_")[-1].split(".")[0]
-        print(letter)
-        for i in range(int(np_arr.size / interval_rate) - chirp_error_amount):
-            start_rate = int((i+1) * interval_rate + chirp_sample_offset)
-            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-            spectrum = spectgramCreator.createSpectrogramScipy(letter, sliced, "EWI16_6", i)
-            save_spectrogram_to_txt(spectrum, place.split(".")[0])
-
+    data_building = request.args.get("building_name")
+    DataLoader().load_data_in_db(data_building)
     return 'Loaded!'
+
 
 @app.route('/evaluate')
 def evaluate():
     model_name = request.args.get("model")
     data_set = request.args.get("dataset")
-    models = {}
-    buildings_name = ["EWI15_6", "EWI16_6"]
-    if model_name == "all":
-        models.update(CNNModel().cnn_models)
-        models.update(RNNModel().rnn_models)
-        models.update(DNNModel().dnn_models)
-
-    if data_set == "all":
-
-        for building_name in buildings_name:
-            with open('text_files/' + building_name +"_results.txt", 'a') as f:
-                print(building_name)
-                data_set, labelsN = Firebase().get_from_real_time_database(building_name)
-                labels = [unit[0] for unit in data_set]
-                map_label_encoding = {}
-                value = 0
-                for label in labels:
-                    if label not in map_label_encoding:
-                        map_label_encoding[label] = value
-                        value += 1
-                spectrograms = [unit[1] for unit in data_set]
-                encoded_labels = [map_label_encoding[label] for label in labels]
-
-                data_x = np.array(spectrograms)
-                data_y = np.array(encoded_labels)
-
-                for model_name in models:
-                    print(model_name)
-                    loss, accuracy = models[model_name].evaluate(data_x, data_y, verbose=2)
-                    f.write(f"{model_name}: {accuracy}, {loss}\n")
-                f.write(f"\n")
-            f.close()
-            print("\n")
+    ModelCreator().evaluate(model_name=model_name, data_set=data_set)
     return "Done"
+
 
 @app.route('/predict_location')
 def predict_location():
     model_name = request.args.get("modelName").replace("-", "_")
     list_of_records = request.data
     dictionary = json.loads(list_of_records)
-    # print(dictionary)
-    modelCreator = ModelCreator()
-    i = 0
-    for key in dictionary:
-        i += 1
-        dictionary[key] = [int(i) for i in dictionary[key].strip('][').split(', ')]
-    spectrogramCreator = SpectogramCreator()
-    for key in dictionary:
-        big_array = dictionary[key][int(0):]
-        np_arr = np.asarray(big_array, dtype=np.int16)
-        chirp_sample_offset = 0
-        for i in range(1):
-            # print("Kur")
-            start_rate = int(i * interval_rate + chirp_sample_offset)
-            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-
-            spectrogram = spectrogramCreator.createSpectrogramScipyTest(sliced)
-            spectrogram = spectrogram.reshape((1, 5, 32, 1))
-            return str(modelCreator.testModel(spectrogram, model_name))
-
-    # print("Hui")
-    return 0
+    return ModelCreator.predict_location(model_name, dictionary)
 
 
 @app.route('/train_model_for_building')
@@ -232,40 +92,10 @@ def add_new_location_point():
     placeLabel = request.args.get("placeLabel")
     buildingLabel = request.args.get("buildingLabel")
 
-    print(placeLabel)
-    print(buildingLabel)
-    spectgramCreator = SpectogramCreator()
-    i = 0
-    for key in dictionary:
-        i += 1
-        dictionary[key] = [int(i) for i in dictionary[key].strip('][').split(', ')]
-    chirp_sample_offset = 0
-    i = 0
-    for key in dictionary:
-        big_array = dictionary[key][int(0):]
-        np_arr = np.asarray(big_array, dtype=np.int16)
-        write("wav_files/"+buildingLabel+"_"+placeLabel+".wav", 44100, np_arr)
+    np_arr = Converter().json_to_audio_data_converter(dictionary)
+    write("wav_files/"+buildingLabel+"_"+placeLabel+".wav", 44100, np_arr)
 
-    print("Done")
     return "Success"
-
-def compute_offset(np_arr):
-    chirp_found = False
-    spectgramCreator = SpectogramCreator()
-    y = 0
-    while True and y < 500:
-        # print(i, interval_rate, chirp_sample_offset)
-        start_rate = int(y * interval_rate)
-        sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
-        # print(sliced)
-        for i in range(sliced.size):
-            if abs(sliced[i]) > 10000:
-                print(i-50)
-                return i-50
-        y+=1
-
-    if chirp_found == False:
-        return "Failure"
 
 
 @app.route('/get_model_names')
@@ -295,9 +125,6 @@ def initialize_models():
     DNNModel().load_models("models/dnn_models/")
     CNNModel().load_models("models/cnn_models/")
     RNNModel().load_models("models/rnn_models/")
-    # DBNModel().load_models("models/dbn_models/")
-    # KNNModel().load_models("models/knn_models/")
-    # LinearClassificationModel().load_models("models/sgd_models/")
     return "done"
 
 @app.route('/compress_models')
@@ -309,8 +136,3 @@ def compress_models():
 
 if __name__ == '__main__':
     app.run(host="192.168.56.1", port=5000, debug=True)
-
-# Train the models again
-# Test them with all data sets
-# Compute their energy consumption
-# Compute the time necessary to make a prediction - send requests from front-end to backend

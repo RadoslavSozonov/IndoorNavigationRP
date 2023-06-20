@@ -13,14 +13,30 @@ class CNNModel(CNNSingelton):
 
     def create_new_model(
             self,
-            name_of_model,
-            conv_pool_layers_info,
-            dense_layers_info,
+            model_name,
+            model_info,
+            layers_creator,
             input_shape=(5, 32, 1),
             optimizer='adam',
             metrics=None,
-            labels_num=2
+            labels_num=2,
+            building=""
     ):
+
+        # model_name = ""
+        conv_pool_layers_info = layers_creator("conv_layers", model_info)
+        dense_layers_info = layers_creator("dense_layers", model_info)
+
+        model_name += "conv_"
+        for layer in conv_pool_layers_info:
+            model_name += str(layer["conv_filters"]) + "_"
+
+        model_name += "dense_"
+        for layer in dense_layers_info:
+            model_name += str(layer["units"]) + "_"
+
+        model_name += building
+
         if metrics is None:
             metrics = [tf.keras.metrics.SparseCategoricalAccuracy()]
         model = self.models.Sequential()
@@ -77,10 +93,10 @@ class CNNModel(CNNSingelton):
                       loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                       metrics=metrics)
 
-        self.cnn_models[name_of_model] = model
+        self.cnn_models[model_name] = model
         print(model.summary())
-        print(get_flops(model, batch_size=1), 32)
-        return model.count_params()
+        flops = get_flops(model, batch_size=32)
+        return model.count_params(), round(flops/1000), model_name
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs=20, batch_size=32):
         # print(training_set)

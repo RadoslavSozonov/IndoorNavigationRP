@@ -5,13 +5,15 @@ from scipy.signal import spectrogram
 from scipy.signal import windows
 import matplotlib.pyplot as plt
 import cv2
-from firebaseConfig import Firebase
+from DatabaseService import DatabaseService
 from datetime import datetime
 
-class SpectogramCreator:
-    def __init__(self):
-        self.x = "data"
 
+class SpectogramCreator:
+
+    def __init__(self):
+        self.interval_rate = 4410
+        self.chirp_error_amount = 2
 
     def get_offset(self, d1_array):
         spectrum = self.spectrogam_generator(d1_array, 0, "a", "b")
@@ -51,33 +53,8 @@ class SpectogramCreator:
                 image = Image.open("photos2/"+date+"_"+label_building+"_"+label_room+str(i)+".png")
                 new_image = image.resize((320, 50))
                 new_image.save("photos2/"+date+"_"+label_building+"_"+label_room+str(i)+".png")
-            # # plt.savefig("photos2/image"+str(i)+".png")
-            # image = cv2.imread("photos2/image"+str(1000+i)+".png")
-            #
-            # image = Image.open("photos2/image"+str(1000+i)+".png")
-            # new_image = image.resize((320, 50))
-            # new_image.save("photos2/image"+str(1000+i)+".png")
-    #133.636364
 
-    def createSpectrogramScipyTest(self, d1_array):
-        min_freq = 19600
-        max_freq = 20400
-        if d1_array.size != 4410:
-            return
-
-        freqs, t, sxx = spectrogram(np.array(d1_array[133:]), window=windows.hann(M=256), noverlap=128, fs=44100)
-        # print(sxx)
-
-        freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
-
-        spectrum = sxx[freq_indices, :]
-        # print(spectrum.shape)
-        max_number = np.max(spectrum)
-        spectrum = (spectrum / max_number) * 255
-
-        return spectrum
-
-    def createSpectrogramScipy(self, label_room, d1_array, label_building, i):
+    def createSpectrogramScipy(self, d1_array):
         # print(d1_array.size)
         min_freq = 19600
         max_freq = 20400
@@ -86,10 +63,9 @@ class SpectogramCreator:
         freqs, t, sxx = spectrogram(np.array(self.audioDataBroader(d1_array[133:])), window=windows.hann(M=256), noverlap=128, fs=44100)
         freq_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))[0]
         spectrum = sxx[freq_indices, :]
-        # print(spectrum.shape)
+
         max_number = np.max(spectrum)
-        spectrum = (spectrum / max_number) * 255
-        Firebase().upload_to_real_time_database(label_building, label_room, spectrum)
+        spectrum = (spectrum / max_number)
         return spectrum
 
     def audioDataBroader(self, audioData):
@@ -100,6 +76,24 @@ class SpectogramCreator:
                 newData.append(number)
                 if len(newData) == 4270:
                     return newData
+
+    def compute_offset(self, np_arr):
+        chirp_found = False
+        spectgramCreator = SpectogramCreator()
+        y = 0
+        while True and y < 500:
+            # print(i, interval_rate, chirp_sample_offset)
+            start_rate = int(y * interval_rate)
+            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+            # print(sliced)
+            for i in range(sliced.size):
+                if abs(sliced[i]) > 10000:
+                    print(i - 50)
+                    return i - 50
+            y += 1
+
+        if chirp_found == False:
+            return "Failure"
 
 
 
