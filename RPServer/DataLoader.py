@@ -22,7 +22,7 @@ class DataLoader:
                 continue
             samplerate, wav_array = wavfile.read('wav_files/' + place)
             np_arr = np.asarray(wav_array[int(4 * self.interval_rate):], dtype=np.int16)
-            chirp_sample_offset = SpectogramCreator.compute_offset(np_arr)
+            chirp_sample_offset = spectgramCreator.compute_offset(np_arr)
 
             letter = place.split("_")[-1].split(".")[0]
 
@@ -47,7 +47,13 @@ class DataLoader:
         shuffled_list = self.shuffle(spectrograms, encoded_labels)
         train_x = np.array([x[0] for x in shuffled_list])
         train_y = np.array([x[1] for x in shuffled_list])
-        X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, train_size=train_size, shuffle=True,
+        X_test = []
+        y_test = []
+        if train_size == 1:
+            X_train = train_x
+            y_train = train_y
+        else:
+            X_train, X_test, y_train, y_test = train_test_split(train_x, train_y, train_size=train_size, shuffle=True,
                                                             random_state=1)
         data_info = {
             "X_train": X_train,

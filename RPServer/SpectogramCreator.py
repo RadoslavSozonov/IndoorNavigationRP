@@ -83,8 +83,8 @@ class SpectogramCreator:
         y = 0
         while True and y < 500:
             # print(i, interval_rate, chirp_sample_offset)
-            start_rate = int(y * interval_rate)
-            sliced = np_arr[start_rate:(int(start_rate + interval_rate))]
+            start_rate = int(y * self.interval_rate)
+            sliced = np_arr[start_rate:(int(start_rate + self.interval_rate))]
             # print(sliced)
             for i in range(sliced.size):
                 if abs(sliced[i]) > 10000:

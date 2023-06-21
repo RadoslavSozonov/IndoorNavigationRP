@@ -140,7 +140,7 @@ class ModelCreator:
 
     def evaluate(self, model_name, data_set):
         models = {}
-        buildings_name = ["EWI15_6", "EWI16_6"]
+        buildings_name = ["EWI20_06", "EWI2_20_06"]
         if model_name == "all":
             models.update(CNNModel().cnn_models)
             models.update(RNNModel().rnn_models)
@@ -153,13 +153,14 @@ class ModelCreator:
                 mode = "a"
                 data = ""
 
-                X_train, X_test, y_train, y_test, labelsN, map_label_encoding = DataLoader().load_model_data_from_db(
+                data_info = DataLoader().load_model_data_from_db(
                     building=building_name, train_size=1)
 
                 for model_name in models:
                     print(model_name)
-                    loss, accuracy = models[model_name].evaluate(X_train, y_train, verbose=2)
-                    data += f"{model_name}: {accuracy}, {loss}\n"
+                    print(len(data_info["X_train"]), len(data_info["y_train"]))
+                    loss, accuracy = models[model_name].evaluate(data_info["X_train"], data_info["y_train"], verbose=2)
+                    data += f"{model_name}: {round(accuracy, 3)}, {round(loss, 3)}\n"
 
                 data += f"\n"
                 Converter().to_txt_file(name, mode, data)

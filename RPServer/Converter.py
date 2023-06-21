@@ -16,12 +16,12 @@ class Converter:
             spectrogramCreator = SpectogramCreator()
             samplerate, wav_array = wavfile.read('wav_files/' + place)
             np_arr = np.asarray(wav_array, dtype=np.int16)
-            chirp_sample_offset = SpectogramCreator.compute_offset(np_arr)
+            chirp_sample_offset = spectrogramCreator.compute_offset(np_arr)
             name = 'text_files/' + place.split(".")[0].lower() + ".txt"
             mode = 'w'
             data = ""
 
-            for i in range(50):
+            for i in range(100):
                 start_rate = int((i + 2) * self.interval_rate + chirp_sample_offset)
                 sliced = np_arr[start_rate:(int(start_rate + self.interval_rate))]
                 spectrogram = spectrogramCreator.createSpectrogramScipy(sliced)
