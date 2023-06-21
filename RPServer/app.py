@@ -80,7 +80,7 @@ def train_model_for_building():
     for model_info in model_infos:
         model_creator = ModelCreator()
         print("Start with "+model_info["model"])
-        model_creator.trainModel(model_info["model"], buildingLabel, model_name, model_info, model_epochs, model_batches)
+        model_creator.trainModel(model_info["model"], buildingLabel, model_info, model_epochs, model_batches)
         print("Finish with " + model_info["model"])
     return "Success"
 

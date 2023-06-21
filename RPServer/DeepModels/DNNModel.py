@@ -24,7 +24,7 @@ class DNNModel(DNNSingelton):
             building=""
     ):
         dense_layers_info = layers_creator("dense_layers", model_info)
-        # model_name = ""
+        model_name = "dnn_"
         model_name += "dense_"
         for layer in dense_layers_info:
             model_name += str(layer["units"]) + "_"
@@ -49,7 +49,7 @@ class DNNModel(DNNSingelton):
         self.dnn_models[model_name] = model
         print(model.summary())
         flops = get_flops(model, batch_size=32)
-        return model.count_params(), round(flops / 1000)
+        return model.count_params(), round(flops / 1000), model_name
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=32):
         start_time = time.time()
@@ -78,9 +78,10 @@ class DNNModel(DNNSingelton):
 
     def load_models(self, path):
         for model_name in listdir(path):
+            print(path+model_name)
             model = self.models.load_model(path+model_name)
             # print("dnn_" + model_name.split(".")[0])
-            self.dnn_models["dnn_"+model_name.split(".")[0].replace("-", "_")] = model
+            self.dnn_models[model_name.split(".")[0].replace("-", "_")] = model
         # print(self.dnn_models)
 
 
@@ -92,5 +93,5 @@ class DNNModel(DNNSingelton):
             #Create a tflite model object from TFLite Converter
             tfmodel = converter.convert()
             # Save TFLite model into a .tflite file
-            model_new_name = "dnn_"+model_name.split(".")[0].replace("-", "_")
+            model_new_name = model_name.split(".")[0].replace("-", "_")
             open("compressed_models/"+model_new_name+".tflite", "wb").write(tfmodel)

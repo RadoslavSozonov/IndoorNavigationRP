@@ -20,7 +20,7 @@ class ModelCreator:
         self.models = {
             "cnn": {"model": CNNModel, "shape": (5, 32, 1)},
             "dnn": {"model": DNNModel, "shape": (5, 32, 1)},
-            "rnn": {"model": RNNModel, "shape": (5, 32, 1)}
+            "rnn": {"model": RNNModel, "shape": (5, 32)}
         }
 
     def trainModel(self, modelToTrain, building, model_info, model_epochs, model_batches):
@@ -39,7 +39,7 @@ class ModelCreator:
     def process_model(self, model, name_of_model, model_info, data_info, input_shape, model_epochs,
                              model_batches, building):
 
-        params, flops, model_name = model.create_new_model(
+        params, flops, model_name = model().create_new_model(
             model_name=name_of_model,
             model_info=model_info,
             labels_num=data_info["labelsN"],
@@ -48,7 +48,7 @@ class ModelCreator:
             layers_creator=self.layers_creator
         )
         start_energy = psutil.sensors_battery().percent
-        history, _, time = model.train(
+        history, _, time = model().train(
             model_name,
             data_info["X_train"],
             data_info["y_train"],
@@ -62,7 +62,7 @@ class ModelCreator:
         battery = (start_energy - end_power) / 100
         battery_current_capacity = 30310
         energy_consumed = round(battery * battery_current_capacity)
-        results = model.predict(model_name, data_info["X_test"],)
+        results = model().predict(model_name, data_info["X_test"],)
 
         y_pred = [np.argmax(x) for x in results]
         acc = accuracy_score(data_info["y_test"], y_pred)
@@ -136,34 +136,32 @@ class ModelCreator:
         data = ""
         for key in data_results.keys():
             data += f"{key}: {data_results[key]}\n"
-        Converter.to_txt_file(name, mode, data)
+        Converter().to_txt_file(name, mode, data)
 
     def evaluate(self, model_name, data_set):
         models = {}
-        buildings_name = ["EWI20_06", "EWI2_20_06"]
+        buildings_name = [data_set]
         if model_name == "all":
             models.update(CNNModel().cnn_models)
             models.update(RNNModel().rnn_models)
             models.update(DNNModel().dnn_models)
 
-        if data_set == "all":
+        for building_name in buildings_name:
+            name = 'text_files/' + building_name + "_results.txt"
+            mode = "a"
+            data = ""
 
-            for building_name in buildings_name:
-                name = 'text_files/' + building_name + "_results.txt"
-                mode = "a"
-                data = ""
+            data_info = DataLoader().load_model_data_from_db(
+                building=building_name, train_size=1)
 
-                data_info = DataLoader().load_model_data_from_db(
-                    building=building_name, train_size=1)
+            for model_name in models:
+                print(model_name)
+                print(len(data_info["X_train"]), len(data_info["y_train"]))
+                loss, accuracy = models[model_name].evaluate(data_info["X_train"], data_info["y_train"], verbose=2)
+                data += f"{model_name}: {round(accuracy, 3)}, {round(loss, 3)}\n"
 
-                for model_name in models:
-                    print(model_name)
-                    print(len(data_info["X_train"]), len(data_info["y_train"]))
-                    loss, accuracy = models[model_name].evaluate(data_info["X_train"], data_info["y_train"], verbose=2)
-                    data += f"{model_name}: {round(accuracy, 3)}, {round(loss, 3)}\n"
-
-                data += f"\n"
-                Converter().to_txt_file(name, mode, data)
+            data += f"\n"
+            Converter().to_txt_file(name, mode, data)
 
     def predict_location(self, model_name, dictionary):
         spectrogramCreator = SpectogramCreator()

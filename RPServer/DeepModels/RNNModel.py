@@ -29,8 +29,8 @@ class RNNModel(RNNSingelton):
     ):
         lstm_layers_info = model_info["lstm_units"]
         dense_layers_info = layers_creator("dense_layers", model_info)
-        # model_name = ""
-        model_name += "lstm_"
+        model_name = ""
+        model_name += "rnn_lstm_"
         for layer in lstm_layers_info:
             model_name += str(layer) + "_"
 
@@ -82,7 +82,7 @@ class RNNModel(RNNSingelton):
         self.rnn_models[model_name] = model
         print(model.summary())
         flops = get_flops(model, batch_size=32)
-        return model.count_params(), round(flops/1000)
+        return model.count_params(), round(flops/1000), model_name
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=64):
         start_time = time.time()
@@ -115,13 +115,13 @@ class RNNModel(RNNSingelton):
             # model = self.models.load_model(path+model_name)
             model = pickle.load(open(path + model_name, 'rb'))
             # print("rnn_" + model_name.split(".")[0])
-            self.rnn_models["rnn_"+model_name.split(".")[0].replace("-", "_")] = model
+            self.rnn_models[model_name.split(".")[0].replace("-", "_")] = model
         # print(self.rnn_models)
 
     def compress(self, path):
         for model_name in listdir(path):
-            model = self.models.load_model(path+model_name)
-
+            # model = self.models.load_model(path+model_name)
+            model = pickle.load(open(path + model_name, 'rb'))
             #Create a TFLite Converter Object from model we created
             converter = tf.lite.TFLiteConverter.from_keras_model(model=model)
             converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
@@ -130,7 +130,7 @@ class RNNModel(RNNSingelton):
             tfmodel = converter.convert()
 
             # Save TFLite model into a .tflite file
-            model_new_name = "rnn_"+model_name.split(".")[0].replace("-", "_")
+            model_new_name = model_name.split(".")[0].replace("-", "_")
             open("compressed_models/"+model_new_name+".tflite", "wb").write(tfmodel)
 
 

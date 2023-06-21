@@ -23,7 +23,7 @@ class CNNModel(CNNSingelton):
             building=""
     ):
 
-        # model_name = ""
+        model_name = "cnn_"
         conv_pool_layers_info = layers_creator("conv_layers", model_info)
         dense_layers_info = layers_creator("dense_layers", model_info)
 
@@ -130,7 +130,7 @@ class CNNModel(CNNSingelton):
         for model_name in listdir(path):
             model = self.models.load_model(path+model_name)
             # print("cnn_"+model_name.split(".")[0])
-            self.cnn_models["cnn_"+model_name.split(".")[0].replace("-", "_")] = model
+            self.cnn_models[model_name.split(".")[0].replace("-", "_")] = model
 
     def compress(self, path):
         for model_name in listdir(path):
@@ -140,5 +140,5 @@ class CNNModel(CNNSingelton):
             #Create a tflite model object from TFLite Converter
             tfmodel = converter.convert()
             # Save TFLite model into a .tflite file
-            model_new_name = "cnn_"+model_name.split(".")[0].replace("-", "_")
+            model_new_name = model_name.split(".")[0].replace("-", "_")
             open("compressed_models/"+model_new_name+".tflite", "wb").write(tfmodel)
