@@ -70,11 +70,8 @@ public class Model implements ModelInterface {
 
     @Override
     public int predict(float[] dataChunk) {
-        //        float[][] results = new float[1][5];
         int[] inputShape = this.tflite.getInputTensor(0).shape();
-//        System.out.println(super.tflite.getInputTensor(0).dataType());
         int[] outputShape = this.tflite.getOutputTensor(0).shape();
-//        System.out.println(super.tflite.getOutputTensor(0).dataType());
 
         TensorBuffer input = TensorBuffer.createFixedSize(
                 inputShape,
@@ -84,22 +81,14 @@ public class Model implements ModelInterface {
                 outputShape,
                 this.tflite.getOutputTensor(0).dataType()
         );
-        System.out.println(Arrays.toString(dataChunk));
-//        float[] flatDataChunk = new float[32*5];
-//        for(int i = 0; i < dataChunk.length; i++){
-//            for(int y = 0; y < dataChunk[0].length; y++){
-//                flatDataChunk[i* dataChunk.length+y] = dataChunk[0][i][y][0];
-//            }
-//        }
 
         input.loadArray(dataChunk, inputShape);
-//        output.loadArray(results, outputShape);
 
         this.tflite.run(input.getBuffer(), output.getBuffer());
         float[] results = output.getFloatArray();
         int maxIndex = 0;
         float value = 0;
-        System.out.println(Arrays.toString(results));
+
         for(int i = 0; i<4;i++){
             if(results[i] > value){
                 maxIndex=i;
