@@ -17,7 +17,7 @@ class Converter:
             samplerate, wav_array = wavfile.read('wav_files/' + place)
             np_arr = np.asarray(wav_array, dtype=np.int16)
             chirp_sample_offset = spectrogramCreator.compute_offset(np_arr)
-            name = 'text_files/' + place.split(".")[0].lower() + ".txt"
+            name = 'text_files_spectrograms/' + place.split(".")[0].lower() + ".txt"
             mode = 'w'
             data = ""
 
