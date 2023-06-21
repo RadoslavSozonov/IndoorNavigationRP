@@ -101,9 +101,10 @@ class RNNModel(RNNSingelton):
 
     def compress(self, path):
         for model_name in listdir(path):
-            model = self.models.load_model(path+model_name)
+            model = pickle.load(open(path + model_name, 'rb'))
             #Create a TFLite Converter Object from model we created
             converter = tf.lite.TFLiteConverter.from_keras_model(model=model)
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
             #Create a tflite model object from TFLite Converter
             tfmodel = converter.convert()
             # Save TFLite model into a .tflite file

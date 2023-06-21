@@ -84,6 +84,7 @@ public class Model implements ModelInterface {
                 outputShape,
                 this.tflite.getOutputTensor(0).dataType()
         );
+        System.out.println(Arrays.toString(dataChunk));
 //        float[] flatDataChunk = new float[32*5];
 //        for(int i = 0; i < dataChunk.length; i++){
 //            for(int y = 0; y < dataChunk[0].length; y++){
