@@ -24,13 +24,15 @@ interval_rate = sample_rate * interval
 
 @app.route('/convert_wav_to_spectrograms')
 def convert_wav_to_spectrograms():
-    Converter().convert_wav_to_spectrograms()
+    data_set = request.args.get("dataset")
+    Converter().convert_wav_to_spectrograms(data_set)
     return "Done"
 
 
 @app.route('/convert_wav_to_text_file')
 def convert_wav_to_text_file():
-    Converter().convert_wav_to_text_file()
+    data_set = request.args.get("dataset")
+    Converter().convert_wav_to_text_file(data_set)
     return "Done"
 
 

@@ -9,9 +9,9 @@ class Converter:
         self.interval_rate = 4410
         self.chirp_error_amount = 2
 
-    def convert_wav_to_spectrograms(self):
+    def convert_wav_to_spectrograms(self, data_set):
         for place in os.listdir("wav_files/"):
-            if not place.__contains__("EWI"):
+            if not place.__contains__(data_set):
                 continue
             spectrogramCreator = SpectogramCreator()
             samplerate, wav_array = wavfile.read('wav_files/' + place)
@@ -34,9 +34,9 @@ class Converter:
 
             Converter().to_txt_file(name, mode, data)
 
-    def convert_wav_to_text_file(self):
+    def convert_wav_to_text_file(self, data_set):
         for place in os.listdir("wav_files/"):
-            if not place.__contains__("EWI"):
+            if not place.__contains__(data_set):
                 continue
             samplerate, wav_array = wavfile.read('wav_files/' + place)
             name = 'text_files/' + place.split(".")[0].lower() + ".txt"
