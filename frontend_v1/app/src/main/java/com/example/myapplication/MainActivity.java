@@ -105,9 +105,9 @@ public class MainActivity extends AppCompatActivity {
                 DataSet dataSet = loadAudioData();
                 System.out.println("Data collected");
                 String[] modelNames = new String[]{
-                    "cnn_conv_32_32_dense_1024_EWI20_06.tflite",
-                    "dnn_dense_512_128_2048_512_EWI20_06.tflite",
-                    "rnn_lstm_64_dense_1024_EWI20_06.tflite"
+                    "cnn_conv_32_32_dense_1024_EWI21_06.tflite",
+                    "dnn_dense_512_128_2048_512_EWI21_06.tflite",
+                    "rnn_lstm_64_dense_1024_EWI21_06.tflite"
                 };
                 BatteryManager mBatteryManager =
                         (BatteryManager)activity.getSystemService(Context.BATTERY_SERVICE);
@@ -160,13 +160,13 @@ public class MainActivity extends AppCompatActivity {
                 InputStream iS;
                 Field[] fields=R.raw.class.getFields();
 
-                DataSet dataList = new DataSet("ewi220_06");
+                DataSet dataList = new DataSet("ewi21_06test");
                 for(int i = 0; i<fields.length;i++){
 
                     String[] split = fields[i].getName().split("_");
                     String buildingName = split[0]+"_"+split[1];
                     System.out.println(fields[i].getName());
-                    if(!buildingName.contains("ewi220_06")){
+                    if(!buildingName.contains("ewi21_06test")){
                         continue;
                     }
 
@@ -219,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
                             if(numbers[count].equals("")){
                                 continue;
                             }
-                            spectr[index] = Float.parseFloat(numbers[count])*255;
+                            spectr[index] = Float.parseFloat(numbers[count]);
                             index+=1;
                         }
 
