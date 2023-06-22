@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private String rooms = "";
 
     private boolean useStaticIp = true;
-    private String server_ip = "145.94.227.201";
+    private String server_ip = "145.94.203.107";
 
     private Activity activity = this;
     @Override

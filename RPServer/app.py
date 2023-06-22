@@ -47,7 +47,7 @@ def play_ground():
 @app.route('/load_data_db')
 def load_data_db():  # put application's code here
     data_building = request.args.get("building_name")
-    DataLoader().load_data_in_db(data_building)
+    DataLoader().load_data_in_db_from_wav_file(data_building)
     return 'Loaded!'
 
 
@@ -93,8 +93,9 @@ def add_new_location_point():
     buildingLabel = request.args.get("buildingLabel")
 
     np_arr = Converter().json_to_audio_data_converter(dictionary)
+    DataLoader().load_data_in_db(buildingLabel, placeLabel, np_arr)
     write("wav_files/"+buildingLabel+"_"+placeLabel+".wav", 44100, np_arr)
-
+    print(f"Location Added {buildingLabel} {placeLabel}")
     return "Success"
 
 

@@ -24,7 +24,7 @@ class ModelCreator:
         }
 
     def trainModel(self, modelToTrain, building, model_info, model_epochs, model_batches):
-        data_info = DataLoader().load_model_data_from_db(building=building, train_size=0.8)
+        data_info = DataLoader().load_model_data_from_db(building=building, train_size=0.7)
         self.process_model(
             self.models[modelToTrain]["model"],
             modelToTrain,

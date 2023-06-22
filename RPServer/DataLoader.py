@@ -14,24 +14,27 @@ class DataLoader:
         self.interval_rate = 4410
         self.chirp_error_amount = 2
 
-    def load_data_in_db(self, data_building):
+    def load_data_in_db(self, data_building, letter, np_arr):
         spectgramCreator = SpectogramCreator()
+        chirp_sample_offset = spectgramCreator.compute_offset(np_arr)
+        np_arr = np_arr[int(4 * self.interval_rate):]
+        for i in range(int(np_arr.size / self.interval_rate) - self.chirp_error_amount):
+            start_rate = int((i + 1) * self.interval_rate + chirp_sample_offset)
+            sliced = np_arr[start_rate:(int(start_rate + self.interval_rate))]
+            spectrum = spectgramCreator.createSpectrogramScipy(sliced)
+            DatabaseService().upload_to_real_time_database(data_building, letter, spectrum)
+            Converter().save_spectrogram_to_txt(spectrum, data_building+"_"+letter)
 
+    def load_data_in_db_from_wav_file(self, data_building):
         for place in os.listdir("wav_files/"):
             if not place.__contains__(data_building):
                 continue
             samplerate, wav_array = wavfile.read('wav_files/' + place)
             np_arr = np.asarray(wav_array[int(4 * self.interval_rate):], dtype=np.int16)
-            chirp_sample_offset = spectgramCreator.compute_offset(np_arr)
 
             letter = place.split("_")[-1].split(".")[0]
-
-            for i in range(int(np_arr.size / self.interval_rate) - self.chirp_error_amount):
-                start_rate = int((i + 1) * self.interval_rate + chirp_sample_offset)
-                sliced = np_arr[start_rate:(int(start_rate + self.interval_rate))]
-                spectrum = spectgramCreator.createSpectrogramScipy(sliced)
-                DatabaseService().upload_to_real_time_database(data_building, letter, spectrum)
-                Converter().save_spectrogram_to_txt(spectrum, place.split(".")[0])
+            building = place.split("_")[0]
+            self.load_data_in_db(building, letter, np_arr)
 
     def load_model_data_from_db(self, building, train_size):
         data, labelsN = DatabaseService().getData(building)
