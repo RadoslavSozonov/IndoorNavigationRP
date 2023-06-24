@@ -39,6 +39,7 @@ class RNNModel(RNNSingelton):
             model_name += str(layer["units"]) + "_"
 
         model_name += building
+        units = lstm_layers_info
         if units is None:
             units = [64]
 
@@ -82,7 +83,7 @@ class RNNModel(RNNSingelton):
         self.rnn_models[model_name] = model
         print(model.summary())
         flops = get_flops(model, batch_size=32)
-        return model.count_params(), round(flops/1000), model_name
+        return model.count_params(), round(flops/1000, 3), model_name
 
     def train(self, name_of_model, training_set, training_labels, validation_set, validation_labels, epochs, batch_size=64):
         start_time = time.time()

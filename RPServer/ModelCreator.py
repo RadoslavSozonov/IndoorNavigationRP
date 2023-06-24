@@ -47,6 +47,7 @@ class ModelCreator:
             building=building,
             layers_creator=self.layers_creator
         )
+
         start_energy = psutil.sensors_battery().percent
         history, _, time = model().train(
             model_name,
@@ -157,8 +158,12 @@ class ModelCreator:
             for model_name in models:
                 print(model_name)
                 print(len(data_info["X_train"]), len(data_info["y_train"]))
-                loss, accuracy = models[model_name].evaluate(data_info["X_train"], data_info["y_train"], verbose=2)
-                data += f"{model_name}: {round(accuracy, 3)}, {round(loss, 3)}\n"
+                results = models[model_name].predict(data_info["X_train"])
+                results = np.array([np.argmax(x, axis=0) for x in results])
+                print(results)
+                acc = accuracy_score(results, data_info["y_train"])
+                data += f"{model_name}: {round(acc, 3)}\n"
+                PlotService().confusion_matrix_creator(model_name+"_"+building_name+"test_data", results, data_info["y_train"], data_info["labels"])
 
             data += f"\n"
             Converter().to_txt_file(name, mode, data)
