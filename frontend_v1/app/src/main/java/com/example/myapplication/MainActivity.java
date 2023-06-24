@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                     "dnn_dense_256_512_1024_EWI21_06.tflite",
                     "dnn_dense_512_128_2048_512_EWI21_06.tflite",
                     "dnn_dense_512_256_256_64_EWI21_06.tflite",
-                    "dnn_dense_1024_512_256_EWI21_06.tflite",
+                    "dnn_dense_2048_512_256_EWI21_06.tflite",
                     "dnn_dense_1024_512_EWI21_06.tflite",
                     "rnn_lstm_32_64_dense_1024_EWI21_06.tflite",
                     "rnn_lstm_64_64_dense_256_EWI21_06.tflite",
