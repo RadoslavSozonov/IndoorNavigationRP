@@ -39,6 +39,11 @@ public class ChirpEmitterBisccitAttempt {
         double amplitude = 1.0; // between -1.0 and 1.0
 
         // Rounds up because of floating points
+        //duration = 10s
+        //samplerte = 1000
+        //samples = 10000
+        //frequency = 1 per second
+        //total = 10 waves
         int numSamples = 1 + (int)(duration * sampleRate);
 
         short[] buffer = new short[numSamples];
@@ -46,7 +51,7 @@ public class ChirpEmitterBisccitAttempt {
 
         // create chirp buffer
         for (int i=0; i < numSamples; i++) {
-            double time = i / (double) sampleRate;
+            double time = (double) i / (double) sampleRate;
             double bufferI = amplitude * Math.sin(angularFrequency * time);
             buffer[i] = (short) (bufferI * Short.MAX_VALUE);
         }
@@ -56,12 +61,20 @@ public class ChirpEmitterBisccitAttempt {
 
         while(ite < audio.length) {
             // fill in the chirp
-            for(int i = 0; i < buffer.length; i++) {
-                audio[ite] = buffer[i];
-                ite++;
+            if(!Globals.PASSIVE_SENSING) {
+                for (int i = 0; i < buffer.length; i++) {
+                    if (ite == audio.length) {
+                        break;
+                    }
+                    audio[ite] = buffer[i];
+                    ite++;
+                }
             }
             // fill in silence
             for(int i = 0; i < (int) (break_length * sampleRate); i++) {
+                if(ite == audio.length){
+                    break;
+                }
                 audio[ite] = (short) 0;
                 ite++;
             }

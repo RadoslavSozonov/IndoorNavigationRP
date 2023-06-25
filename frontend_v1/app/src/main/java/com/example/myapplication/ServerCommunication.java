@@ -67,6 +67,7 @@ public class ServerCommunication {
 
         try {
             //String body = "{\"audio\": " + new Gson().toJson(audiolist) + "}";
+
             String body = new Gson().toJson(room);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");

@@ -117,19 +117,18 @@ public class LabelWindow extends Activity {
                         @Override
                         public void run() {
                             AudioRecord audioRecord = createAudioRecord();
-                            int buffer_size = (int) (Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP);
+                            int buffer_size = (int) ((Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * Globals.REPEAT_CHIRP));
                             short[] buffer = new short[buffer_size];
 
                             List<short[]> listOfRecords = new ArrayList<>();
 
-                            audioRecord.startRecording();
-                            new Thread(new Runnable() {
+                            Thread thread = new Thread(new Runnable() {
                                 @Override
                                 public void run() {
                                     try {
+                                        audioRecord.startRecording();
                                         cyclicBarrier.await();
-
-                                        audioRecord.read(buffer, 0, buffer_size);
+                                        audioRecord.read(buffer, 0, buffer_size, AudioRecord.READ_BLOCKING);
                                     } catch (BrokenBarrierException e) {
                                         throw new RuntimeException(e);
                                     } catch (InterruptedException e) {
@@ -137,16 +136,24 @@ public class LabelWindow extends Activity {
                                     }
 
                                 }
-                            }).start();
+                            });
+                            thread.start();
+
 
                             ChirpEmitterBisccitAttempt.playSound(Globals.CHIRP_FREQUENCY, Globals.REPEAT_CHIRP, cyclicBarrier);
-
-                            listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
+                            try {
+                                thread.join();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
                             audioRecord.stop();
                             audioRecord.release();
 
+
+                            listOfRecords.add(Arrays.copyOf(buffer, buffer_size));
+
                             new Thread(() -> {
-                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim()), server_ip);
+                                ServerCommunication.addRoom(new Room(listOfRecords, label_room_text.trim(), label_building_text.trim(), Globals.PASSIVE_SENSING, Globals.REPEAT_CHIRP, Globals.RECORDING_INTERVAL), server_ip);
                             }).start();
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -220,10 +227,10 @@ public class LabelWindow extends Activity {
 
         AudioRecord audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
-                44100,
+                Globals.SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                (int) (44100 * 0.1 * 2 * 100) // sampleRate*duration*2*repeats
+                (int) ((Globals.SAMPLE_RATE * Globals.RECORDING_INTERVAL * 2 * Globals.REPEAT_CHIRP) + 0.5*Globals.SAMPLE_RATE) // sampleRate*duration*2*repeats
         );
 //        System.out.println(audioRecord.getBufferSizeInFrames());
         return audioRecord;

@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
     private String rooms = "";
 
     private boolean useStaticIp = true;
-    private String server_ip = "192.168.1.14";
+    private String server_ip = "192.168.50.77";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
